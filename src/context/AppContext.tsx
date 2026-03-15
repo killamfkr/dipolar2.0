@@ -277,6 +277,7 @@ interface AppState {
   channels: IptvChannel[];
   epg: EpgData;
   playback: PlaybackState | null;
+  playbackError: string | null;
   m3uUrl: string;
   epgUrl: string;
   lastM3uResult: LoadResult | null;
@@ -293,6 +294,7 @@ interface AppState {
 
 interface AppContextValue extends AppState {
   setPlayback: (state: PlaybackState | null) => void;
+  clearPlaybackError: () => void;
   reportPlaybackProgress: (url: string, progress: number, duration: number, title?: string, poster?: string) => void;
   removeFromContinueWatching: (id: string) => void;
   toggleFavoriteChannel: (id: string) => void;
@@ -333,6 +335,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [channels, setChannels] = useState<IptvChannel[]>(() => empty.channels);
   const [epg, setEpg] = useState<EpgData>(() => empty.epg);
   const [playback, setPlaybackState] = useState<PlaybackState | null>(null);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [m3uUrl, setM3uUrl] = useState(() => empty.m3uUrl);
   const [epgUrl, setEpgUrl] = useState(() => empty.epgUrl);
   const [lastM3uResult, setLastM3uResult] = useState<LoadResult | null>(null);
@@ -511,7 +514,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setPlayback = useCallback((state: PlaybackState | null) => {
     setPlaybackState(state);
+    if (!state) setPlaybackError(null);
   }, []);
+  const clearPlaybackError = useCallback(() => setPlaybackError(null), []);
 
   const setPreferExternalPlayer = useCallback((value: boolean) => {
     setPreferExternalPlayerState(value);
@@ -546,16 +551,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const playOrOpenExternally = useCallback(
     async (state: PlaybackState) => {
+      setPlaybackError(null);
       let url = state?.url != null ? String(state.url).trim() : '';
       if (isServerStreamUrl(url) && serverBaseUrl) {
         try {
           url = await resolveServerStreamUrl(serverBaseUrl, url);
-        } catch {
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : 'Stream unavailable';
+          setPlaybackError(msg);
           setPlaybackState(null);
           return;
         }
       }
       if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+        setPlaybackError('No playable URL');
         setPlaybackState(null);
         return;
       }
@@ -1003,6 +1012,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       channels,
       epg,
       playback,
+      playbackError,
       m3uUrl,
       epgUrl,
       lastM3uResult,
@@ -1016,6 +1026,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       continueWatching,
       favorites,
       setPlayback,
+      clearPlaybackError,
       reportPlaybackProgress,
       removeFromContinueWatching,
       toggleFavoriteChannel,
@@ -1049,6 +1060,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       channels,
       epg,
       playback,
+      playbackError,
       m3uUrl,
       epgUrl,
       lastM3uResult,

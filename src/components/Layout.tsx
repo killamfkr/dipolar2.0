@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import styles from './Layout.module.css';
 
 export function Layout() {
-  const { playback } = useApp();
+  const { playback, playbackError, clearPlaybackError } = useApp();
   const { currentUser, users } = useAuth();
   const firstTimeSetup = !currentUser && users.length === 0;
 
@@ -15,6 +15,12 @@ export function Layout() {
       {firstTimeSetup && (
         <div className={styles.firstTimeBanner}>
           First-time setup: go to <Link to="/settings">Settings</Link> → Admin to set an admin password and create your first user. Then sign in with that username and PIN.
+        </div>
+      )}
+      {playbackError && (
+        <div className={styles.playbackErrorBanner}>
+          <span>{playbackError}</span>
+          <button type="button" onClick={clearPlaybackError} aria-label="Dismiss">×</button>
         </div>
       )}
       <div className={styles.layoutRow}>

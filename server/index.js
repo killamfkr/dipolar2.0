@@ -247,6 +247,37 @@ app.get('/api/stream/vod/m3u/:id', (req, res) => {
   res.json({ url: item.url, title: item.name });
 });
 
+// Series episodes (for server-mode clients that don't have xtreamConfig)
+function flattenSeriesEpisodes(info) {
+  const episodes = info?.episodes;
+  if (!episodes) return [];
+  if (Array.isArray(episodes)) {
+    return [...episodes].sort((a, b) => (a.episode_num || 0) - (b.episode_num || 0));
+  }
+  const list = [];
+  for (const seasonEpisodes of Object.values(episodes)) {
+    if (Array.isArray(seasonEpisodes)) list.push(...seasonEpisodes);
+  }
+  return list.sort((a, b) => (a.episode_num || 0) - (b.episode_num || 0));
+}
+
+app.get('/api/series/:seriesId/episodes', async (req, res) => {
+  if (!catalog.xtreamConfig) return res.status(404).json({ error: 'No Xtream config' });
+  const seriesId = req.params.seriesId;
+  const cfg = catalog.xtreamConfig;
+  const base = cfg.baseUrl.replace(/\/+$/, '');
+  const url = `${base}/player_api.php?username=${encodeURIComponent(cfg.username)}&password=${encodeURIComponent(cfg.password)}&action=get_series_info&series_id=${encodeURIComponent(seriesId)}`;
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!r.ok) return res.status(r.status).json({ error: 'Series info failed' });
+    const data = await r.json();
+    const episodes = flattenSeriesEpisodes(data);
+    return res.json({ episodes });
+  } catch (e) {
+    return res.status(500).json({ error: e.message || 'Failed to load series' });
+  }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, name: 'Dipolar Server' });
 });

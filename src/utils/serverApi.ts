@@ -82,3 +82,20 @@ export async function resolveStreamUrl(baseUrl: string, serverUrl: string): Prom
   if (typeof resolved !== 'string' || !resolved) throw new Error('Invalid stream response');
   return resolved;
 }
+
+/** Fetch series episodes from server (for server mode when client has no xtreamConfig). */
+export async function fetchSeriesEpisodesFromServer(
+  baseUrl: string,
+  seriesId: number | string
+): Promise<Array<{ id: string | number; episode_num: number; title: string; container_extension?: string; info?: { movie_image?: string; plot?: string }; custom_sid?: string | null; [key: string]: unknown }>> {
+  const base = (baseUrl || '').trim().replace(/\/+$/, '');
+  if (!base) throw new Error('Server URL not set');
+  const id = String(seriesId);
+  const res = await fetch(`${base}/api/series/${encodeURIComponent(id)}/episodes`, {
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) throw new Error(`Series: ${res.status}`);
+  const data = await res.json();
+  const episodes = data?.episodes;
+  return Array.isArray(episodes) ? episodes : [];
+}

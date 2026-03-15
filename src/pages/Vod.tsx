@@ -8,6 +8,7 @@ import {
   flattenSeriesEpisodes,
   resolveXtreamIcon,
 } from '../utils/xtreamApi';
+import { fetchSeriesEpisodesFromServer } from '../utils/serverApi';
 import type { VodEpisode, VodMovie, VodSeries } from '../types/xtream';
 import styles from './Vod.module.css';
 
@@ -90,7 +91,7 @@ function VodContent() {
 
   const openSeriesById = useCallback(
     async (seriesId: number) => {
-      if (!Number.isFinite(Number(seriesId)) || !xtreamConfig) return;
+      if (!Number.isFinite(Number(seriesId))) return;
       const series = (Array.isArray(vodSeries) ? vodSeries : []).find(
         (s) => s?.series_id != null && Number(s.series_id) === Number(seriesId)
       );
@@ -98,8 +99,16 @@ function VodContent() {
       setTab('series');
       setLoadingDetail(true);
       try {
-        const info = await fetchSeriesInfo(xtreamConfig, seriesId);
-        const episodes = flattenSeriesEpisodes(info);
+        let episodes: VodEpisode[];
+        if (serverBaseUrl) {
+          episodes = await fetchSeriesEpisodesFromServer(serverBaseUrl, seriesId);
+        } else if (xtreamConfig) {
+          const info = await fetchSeriesInfo(xtreamConfig, seriesId);
+          episodes = flattenSeriesEpisodes(info);
+        } else {
+          setSeriesDetail(null);
+          return;
+        }
         setSeriesDetail({ series, episodes });
       } catch {
         setSeriesDetail(null);
@@ -107,7 +116,7 @@ function VodContent() {
         setLoadingDetail(false);
       }
     },
-    [vodSeries, xtreamConfig]
+    [vodSeries, xtreamConfig, serverBaseUrl]
   );
 
   useEffect(() => {
@@ -394,7 +403,7 @@ function VodContent() {
                   <button
                     type="button"
                     className={styles.cardButton}
-                    onClick={() => openSeries(series)}
+                    onClick={() => openSeriesById(Number(series.series_id))}
                     disabled={loadingDetail || !hasValidId}
                   >
                 <div className={styles.poster}>
