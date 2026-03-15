@@ -36,3 +36,4 @@ Images pull from **ghcr.io** (no local build). No custom network or Network drop
 - You don’t need to change any Network setting in the Docker UI; the templates handle it.
 - To update: **Docker** → select container → **Recreate** (or pull the image first).
 - If pull fails with “access denied”, the GitHub package may be private: go to the repo → **Packages** (right side) → open **dipolar-server** or **dipolar-app** → **Package settings** → change **Visibility** to **Public**.
+- **If the app form shows Container port 3000:** The image listens on **80** inside the container. Copy the latest `dipolar-app.xml` from the repo over the one in `/boot/config/plugins/dockerMan/templates-user/`, then remove the app container and add it again. Or edit the container and set **container port** to **80** (host stays 3000).
