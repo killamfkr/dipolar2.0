@@ -1,0 +1,215 @@
+.epgWrap {
+  background: var(--bg-elevated);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.timeNav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+}
+
+.timeNav button {
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.timeNav button:hover {
+  background: var(--bg-hover);
+}
+
+.timeRange {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.gridScroll {
+  overflow-x: auto;
+  max-height: calc(100vh - 280px);
+  overflow-y: auto;
+}
+
+.grid {
+  min-width: 100%;
+  border-collapse: collapse;
+}
+
+.timeRow {
+  display: flex;
+  position: sticky;
+  top: 0;
+  background: var(--bg-sidebar);
+  z-index: 2;
+  border-bottom: 1px solid var(--border);
+}
+
+.channelHeaderCell {
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+}
+
+.timeCell {
+  flex-shrink: 0;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-right: 1px solid var(--border);
+}
+
+.virtualContent {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.channelRow {
+  position: absolute;
+  left: 0;
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  min-height: 56px;
+  box-sizing: border-box;
+}
+
+.channelCellWrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--border);
+  background: var(--bg-base);
+  padding-right: 0.25rem;
+}
+
+.channelCell {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-primary);
+  transition: background 0.15s;
+  min-width: 0;
+}
+
+.channelCell:hover {
+  background: var(--bg-hover);
+}
+
+.favBtn,
+.favBtnActive {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.15rem;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.favBtn:hover {
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.favBtnActive {
+  color: var(--accent);
+}
+
+.favBtnActive:hover {
+  background: var(--bg-hover);
+}
+
+.channelLogo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.channelLogoPlaceholder {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated);
+  border-radius: 4px;
+  font-size: 1.1rem;
+}
+
+.channelName {
+  font-weight: 500;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.programsCell {
+  position: relative;
+  flex: 1;
+  min-height: 56px;
+  background: var(--bg-base);
+}
+
+.programBlock {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  padding: 0.35rem 0.5rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  overflow: hidden;
+  transition: background 0.15s, border-color 0.15s;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 60px;
+}
+
+.programBlock:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+}
+
+.programLive {
+  border-color: var(--accent);
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.programTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.programTime {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}

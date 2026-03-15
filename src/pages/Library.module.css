@@ -1,0 +1,159 @@
+.favoritesSection {
+  margin-top: 0.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.favoritesMainTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1rem;
+}
+
+.favoritesSubTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0 0 0.5rem;
+}
+
+.channelCard {
+  flex-shrink: 0;
+  width: 140px;
+  position: relative;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.channelCardButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.channelCardButton:hover {
+  background: var(--bg-hover);
+}
+
+.channelLogo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.channelLogoPlaceholder {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+  border-radius: 8px;
+  font-size: 1.5rem;
+}
+
+.channelName {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.channelCard .favBtn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.channelCard .favBtn:hover {
+  filter: brightness(1.1);
+}
+
+.favBtnOverlay {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favBtnOverlay:hover {
+  filter: brightness(1.1);
+}
+
+.quickList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.quickItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--text-primary);
+  width: 100%;
+}
+
+button.quickItem:hover {
+  background: var(--bg-hover);
+}
+
+.quickIcon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.quickTitle {
+  font-size: 0.9rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

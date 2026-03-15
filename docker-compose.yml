@@ -1,0 +1,16 @@
+# Run Dipolar Server in Docker.
+# From repo root: docker compose up -d
+# Server: http://localhost:3333 (or your host IP)
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    image: dipolar-server:latest
+    container_name: dipolar-server
+    ports:
+      - "3333:3333"
+    environment:
+      - PORT=3333
+      - NODE_ENV=production
+    restart: unless-stopped

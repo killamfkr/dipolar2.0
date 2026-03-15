@@ -1,0 +1,143 @@
+.sidebar {
+  --sidebar-width: 220px;
+  width: var(--sidebar-width);
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  padding: 1.25rem 0;
+  z-index: 50;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.logoIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.logoText {
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1.25rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s, background 0.15s;
+  border-radius: 0 8px 8px 0;
+  margin-right: 8px;
+}
+
+.navLink:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.navLinkActive {
+  color: var(--accent);
+  background: var(--bg-active);
+}
+
+.navIcon {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.themeWrap {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.userWrap {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.userName {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logoutBtn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.logoutBtn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    bottom: auto;
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem;
+  }
+
+  .logo {
+    display: none;
+  }
+
+  .nav {
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+  }
+
+  .navLink span:not(.navIcon) {
+    display: none;
+  }
+
+  .navIcon {
+    font-size: 1.25rem;
+  }
+
+  .themeWrap .btnText {
+    display: none;
+  }
+}

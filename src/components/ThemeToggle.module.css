@@ -1,0 +1,44 @@
+.wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.btn,
+.btnActive {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.btn:hover {
+  background: var(--bg-hover);
+}
+
+.btnActive {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btnText {
+  text-transform: capitalize;
+}
