@@ -246,19 +246,37 @@ app.get('/api/catalog', (req, res) => {
 // Resolve stream URL for a channel (by id). Returns { url } so client never sees raw M3U.
 app.get('/api/stream/live/:channelId', (req, res) => {
   const ch = catalog.channels.find((c) => c.id === req.params.channelId);
-  if (!ch) return res.status(404).json({ error: 'Channel not found' });
+  if (!ch) {
+    const msg = (!catalog.channels || catalog.channels.length === 0)
+      ? 'No channels loaded. In Admin load M3U or Xtream first.'
+      : 'Channel not found';
+    return res.status(404).json({ error: msg });
+  }
   res.json({ url: ch.url, title: ch.name });
 });
 
 // Resolve stream URL for VOD movie (Xtream). Client sends movie id or stream_id.
 app.get('/api/stream/vod/movie/:id', (req, res) => {
   const id = req.params.id;
-  const movie = catalog.vodMovies.find((m) => String(m.stream_id) === id || String(m.num) === id);
-  if (!movie || !catalog.xtreamConfig) return res.status(404).json({ error: 'Movie not found' });
+  const idNum = Number(id);
+  const hasCatalog = Array.isArray(catalog.vodMovies) && catalog.vodMovies.length > 0;
+  const movie = hasCatalog && catalog.vodMovies.find((m) => {
+    const sid = m.stream_id != null ? String(m.stream_id) : '';
+    const num = m.num != null ? String(m.num) : '';
+    return sid === id || num === id || (Number.isFinite(idNum) && (Number(m.stream_id) === idNum || Number(m.num) === idNum));
+  });
+  if (!movie || !catalog.xtreamConfig) {
+    const msg = !hasCatalog
+      ? 'No VOD loaded. In Admin load Xtream VOD first.'
+      : !catalog.xtreamConfig
+        ? 'Xtream not configured.'
+        : 'Movie not found';
+    return res.status(404).json({ error: msg });
+  }
   const cfg = catalog.xtreamConfig;
   const base = cfg.baseUrl.endsWith('/') ? cfg.baseUrl : cfg.baseUrl + '/';
-  const ext = movie.container_extension || 'mp4';
-  const url = `${base}movie/${encodeURIComponent(cfg.username)}/${encodeURIComponent(cfg.password)}/${movie.stream_id}.${ext.replace(/^\./, '')}`;
+  const ext = (movie.container_extension || 'mp4').replace(/^\./, '');
+  const url = `${base}movie/${encodeURIComponent(cfg.username)}/${encodeURIComponent(cfg.password)}/${movie.stream_id}.${ext}`;
   res.json({ url, title: movie.name });
 });
 
@@ -275,7 +293,12 @@ app.get('/api/stream/vod/episode/:episodeId', (req, res) => {
 // M3U VOD item (by id)
 app.get('/api/stream/vod/m3u/:id', (req, res) => {
   const item = catalog.vodFromM3u.find((v) => v.id === req.params.id);
-  if (!item) return res.status(404).json({ error: 'VOD item not found' });
+  if (!item) {
+    const msg = (!catalog.vodFromM3u || catalog.vodFromM3u.length === 0)
+      ? 'No M3U VOD loaded. Load an M3U with VOD groups in Admin first.'
+      : 'VOD item not found';
+    return res.status(404).json({ error: msg });
+  }
   res.json({ url: item.url, title: item.name });
 });
 

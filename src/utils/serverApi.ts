@@ -76,8 +76,11 @@ export async function resolveStreamUrl(baseUrl: string, serverUrl: string): Prom
   const base = (baseUrl || '').trim().replace(/\/+$/, '');
   if (!base) throw new Error('Server URL not set');
   const res = await fetch(`${base}/api/stream/${path}`, { signal: AbortSignal.timeout(10000) });
-  if (!res.ok) throw new Error(`Stream: ${res.status}`);
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = (data && typeof data.error === 'string') ? data.error : `Stream: ${res.status}`;
+    throw new Error(msg);
+  }
   const resolved = data?.url;
   if (typeof resolved !== 'string' || !resolved) throw new Error('Invalid stream response');
   return resolved;
