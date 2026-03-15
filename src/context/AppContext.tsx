@@ -368,20 +368,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!base) return;
     try {
       const data = await fetchServerCatalog(base);
-      setChannels((data.channels || []) as IptvChannel[]);
-      setEpg({
-        channels: (data.epg?.channels || []).map((ch: { id: string; displayName?: string }) => ({
-          id: ch.id,
-          displayName: ch.displayName ?? ch.id,
-          programs: [],
-        })),
-      });
-      setVodMovies((data.vodMovies || []) as VodMovie[]);
-      setVodSeries((data.vodSeries || []) as VodSeries[]);
-      setVodFromM3u(data.vodFromM3u || []);
-      catalogHydratedRef.current = true;
+      const newChannels = (data.channels || []) as IptvChannel[];
+      const newVodMovies = (data.vodMovies || []) as VodMovie[];
+      const newVodSeries = (data.vodSeries || []) as VodSeries[];
+      const newVodFromM3u = data.vodFromM3u || [];
+      // Only overwrite with server data when server actually returned catalog (avoid wiping cache on empty/failed response)
+      const hasCatalog =
+        newChannels.length > 0 ||
+        newVodMovies.length > 0 ||
+        newVodSeries.length > 0 ||
+        newVodFromM3u.length > 0;
+      if (hasCatalog) {
+        setChannels(newChannels);
+        setEpg({
+          channels: (data.epg?.channels || []).map((ch: { id: string; displayName?: string }) => ({
+            id: ch.id,
+            displayName: ch.displayName ?? ch.id,
+            programs: [],
+          })),
+        });
+        setVodMovies(newVodMovies);
+        setVodSeries(newVodSeries);
+        setVodFromM3u(newVodFromM3u);
+        catalogHydratedRef.current = true;
+      }
+      // when server returns empty, leave catalog and ref to hydration so cached data is kept
     } catch {
-      /* ignore */
+      /* keep existing catalog from cache */
     }
   }, []);
 
