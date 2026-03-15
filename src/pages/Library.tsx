@@ -79,11 +79,17 @@ export function Library() {
         });
         return;
       }
-      if (!xtreamConfig) return;
-      const ext = movie.container_extension || 'mp4';
-      const url = buildMovieStreamUrl(xtreamConfig, Number(streamId), ext);
-      if (!url) return;
-      playOrOpenExternally({ url, title: movie.name ?? 'Movie', isLive: false });
+      if (xtreamConfig) {
+        const ext = movie.container_extension || 'mp4';
+        const url = buildMovieStreamUrl(xtreamConfig, Number(streamId), ext);
+        if (url) playOrOpenExternally({ url, title: movie.name ?? 'Movie', isLive: false });
+        return;
+      }
+      playOrOpenExternally({
+        url: `server://vod/movie/${streamId}`,
+        title: movie.name ?? 'Movie',
+        isLive: false,
+      });
     },
     [xtreamConfig, serverBaseUrl, playOrOpenExternally]
   );

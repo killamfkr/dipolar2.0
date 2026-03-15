@@ -430,9 +430,13 @@ export function Settings() {
           <p className={styles.desc}>
             Here: <strong>{PLAYBACK_LABELS.android}</strong>. Playback always uses the built-in VLC player (full codecs for IPTV).
           </p>
-        ) : playbackContext === 'web' || playbackContext === 'webTV' ? (
+        ) : playbackContext === 'web' ? (
           <p className={styles.desc}>
-            Here: <strong>{playbackContext === 'webTV' ? PLAYBACK_LABELS.webTV : PLAYBACK_LABELS.web}</strong>. Playback always uses the in-app player (HLS and browser-supported formats).
+            Here: <strong>{PLAYBACK_LABELS.web}</strong>. Playback uses the in-app player (HLS and browser-supported formats).
+          </p>
+        ) : playbackContext === 'webTV' ? (
+          <p className={styles.desc}>
+            Here: <strong>{PLAYBACK_LABELS.webTV}</strong>. Stream opens in a new tab so the TV or external player can use proper codecs.
           </p>
         ) : playbackContext === 'nativeOther' ? (
           <>

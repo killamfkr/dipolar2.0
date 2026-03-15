@@ -201,12 +201,44 @@ app.post('/api/admin/load-vod', async (req, res) => {
 
 // ----- Client API (no raw URLs; clients get catalog and request stream by id) -----
 
+// Resolve relative icon/logo URLs to absolute (so clients get working box art links)
+function resolveIcon(baseUrl, icon) {
+  if (!icon || typeof icon !== 'string') return icon;
+  const trimmed = icon.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+  if (!baseUrl || typeof baseUrl !== 'string') return trimmed;
+  const base = baseUrl.replace(/\/+$/, '');
+  const path = trimmed.startsWith('/') ? trimmed : `/${trimmed.replace(/^\/+/, '')}`;
+  try {
+    return new URL(path, `${base}/`).href;
+  } catch {
+    return trimmed;
+  }
+}
+
 app.get('/api/catalog', (req, res) => {
+  const base = catalog.xtreamConfig?.baseUrl || '';
+  const movies = (catalog.vodMovies || []).map((m) => ({
+    ...m,
+    stream_icon: resolveIcon(base, m.stream_icon) || m.stream_icon,
+  }));
+  const series = (catalog.vodSeries || []).map((s) => ({
+    ...s,
+    stream_icon: resolveIcon(base, s.stream_icon) || s.stream_icon,
+    cover: resolveIcon(base, s.cover) || s.cover,
+  }));
+  const channels = (catalog.channels || []).map((ch) => ({
+    id: ch.id,
+    name: ch.name,
+    logo: resolveIcon(base, ch.logo) || ch.logo,
+    group: ch.group,
+    epgId: ch.epgId,
+  }));
   res.json({
-    channels: catalog.channels.map(({ id, name, logo, group, epgId }) => ({ id, name, logo, group, epgId })),
+    channels,
     epg: catalog.epg,
-    vodMovies: catalog.vodMovies,
-    vodSeries: catalog.vodSeries,
+    vodMovies: movies,
+    vodSeries: series,
     vodFromM3u: catalog.vodFromM3u,
   });
 });

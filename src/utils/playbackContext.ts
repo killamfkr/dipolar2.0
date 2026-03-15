@@ -9,7 +9,7 @@ export type PlaybackContext = 'android' | 'web' | 'webTV' | 'nativeOther';
 export const PLAYBACK_LABELS: Record<PlaybackContext, string> = {
   android: 'Built-in VLC (mobile)',
   web: 'In-app player (browser)',
-  webTV: 'In-app player (TV)',
+  webTV: 'Opens in new tab (TV codecs)',
   nativeOther: 'External or in-app (your choice)',
 };
 
@@ -36,10 +36,8 @@ function isWebTV(): boolean {
     /NetCast/i,
   ];
   if (tvPatterns.some((p) => p.test(ua))) return true;
-  // Large screen + no touch can hint at TV/living room
-  const largeScreen = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1280px)').matches;
-  const noTouch = typeof navigator !== 'undefined' && !navigator.maxTouchPoints;
-  return Boolean(largeScreen && noTouch && /Linux|Android/i.test(ua));
+  // Only use UA for TV; avoid treating desktop/laptop as TV (so they get in-app player)
+  return false;
 }
 
 /**

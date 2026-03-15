@@ -331,19 +331,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const { currentUser } = useAuth();
   const userId = currentUser?.id ?? null;
 
-  const empty = getEmptyPersisted();
-  const [channels, setChannels] = useState<IptvChannel[]>(() => empty.channels);
-  const [epg, setEpg] = useState<EpgData>(() => empty.epg);
+  // Restore catalog from cache immediately so refresh doesn't lose the playlist
+  const initialPersisted = useMemo(() => loadPersistedData(), []);
+  const [channels, setChannels] = useState<IptvChannel[]>(() => initialPersisted.channels);
+  const [epg, setEpg] = useState<EpgData>(() => initialPersisted.epg);
   const [playback, setPlaybackState] = useState<PlaybackState | null>(null);
   const [playbackError, setPlaybackError] = useState<string | null>(null);
-  const [m3uUrl, setM3uUrl] = useState(() => empty.m3uUrl);
-  const [epgUrl, setEpgUrl] = useState(() => empty.epgUrl);
+  const [m3uUrl, setM3uUrl] = useState(() => initialPersisted.m3uUrl);
+  const [epgUrl, setEpgUrl] = useState(() => initialPersisted.epgUrl);
   const [lastM3uResult, setLastM3uResult] = useState<LoadResult | null>(null);
   const [lastEpgResult, setLastEpgResult] = useState<LoadResult | null>(null);
-  const [xtreamConfig, setXtreamConfigState] = useState<XtreamConfig | null>(() => empty.xtreamConfig);
-  const [vodMovies, setVodMovies] = useState<VodMovie[]>(() => empty.vodMovies);
-  const [vodSeries, setVodSeries] = useState<VodSeries[]>(() => empty.vodSeries);
-  const [vodFromM3u, setVodFromM3u] = useState<M3uVodItem[]>(() => empty.vodFromM3u);
+  const [xtreamConfig, setXtreamConfigState] = useState<XtreamConfig | null>(() => initialPersisted.xtreamConfig);
+  const [vodMovies, setVodMovies] = useState<VodMovie[]>(() => initialPersisted.vodMovies);
+  const [vodSeries, setVodSeries] = useState<VodSeries[]>(() => initialPersisted.vodSeries);
+  const [vodFromM3u, setVodFromM3u] = useState<M3uVodItem[]>(() => initialPersisted.vodFromM3u);
   const [lastXtreamResult, setLastXtreamResult] = useState<LoadResult | null>(null);
   const [lastVodResult, setLastVodResult] = useState<VodLoadResult | null>(null);
   const [continueWatching, setContinueWatching] = useState<ContinueWatchingItem[]>(() => loadContinueWatching(userId));
@@ -351,7 +352,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [preferExternalPlayer, setPreferExternalPlayerState] = useState(loadPreferExternalPlayer);
   const [externalPlayerMode, setExternalPlayerModeState] = useState(loadExternalPlayerMode);
   const [serverBaseUrl, setServerBaseUrlState] = useState(getServerBaseUrl);
-  const catalogHydratedRef = useRef(false);
+  const catalogHydratedRef = useRef(true); // true so save runs after initial restore from cache
 
   useEffect(() => {
     setContinueWatching(loadContinueWatching(userId));
@@ -469,25 +470,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       runAfterPaint(() => {
         if (cancelled) return;
-        const data = loadPersistedData();
-        const useServer = !!getServerBaseUrl();
-        // Always restore catalog from cache (including in server mode) so it persists when switching users
-        setChannels(data.channels);
-        setEpg(data.epg);
-        setVodMovies(Array.isArray(data.vodMovies) ? data.vodMovies.slice(0, 100) : []);
-        setVodSeries(Array.isArray(data.vodSeries) ? data.vodSeries.slice(0, 50) : []);
-        setVodFromM3u(data.vodFromM3u);
-        if (!useServer && data.channels.length === 0) {
-          const { channels: initialChannels, vodItems: initialVod } = parseM3u(INLINE_SAMPLE_M3U);
-          const initialEpg = parseXmltv(SAMPLE_XMLTV);
-          setChannels(initialChannels);
-          setVodFromM3u(initialVod);
-          setEpg(initialEpg);
-        }
-        catalogHydratedRef.current = true;
-        setM3uUrl(data.m3uUrl);
-        setEpgUrl(data.epgUrl);
-        setXtreamConfigState(data.xtreamConfig);
+        // Web: initial state already restored from loadPersistedData() in useState; serverBaseUrl effect will refresh if set
       });
     });
     return () => { cancelled = true; };
@@ -552,89 +535,107 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const playOrOpenExternally = useCallback(
     async (state: PlaybackState) => {
       setPlaybackError(null);
-      let url = state?.url != null ? String(state.url).trim() : '';
-      if (isServerStreamUrl(url) && serverBaseUrl) {
-        try {
-          url = await resolveServerStreamUrl(serverBaseUrl, url);
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : 'Stream unavailable';
-          setPlaybackError(msg);
+      try {
+        let url = state?.url != null ? String(state.url).trim() : '';
+        // Use current server URL at play time (not stale state)
+        const baseUrl = getServerBaseUrl();
+        if (isServerStreamUrl(url) && baseUrl) {
+          try {
+            url = await resolveServerStreamUrl(baseUrl, url);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : 'Stream unavailable';
+            setPlaybackError(msg);
+            setPlaybackState(null);
+            return;
+          }
+        }
+        if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+          setPlaybackError(baseUrl ? 'Stream not found or server error' : 'No playable URL. Set server in Settings.');
           setPlaybackState(null);
           return;
         }
-      }
-      if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
-        setPlaybackError('No playable URL');
-        setPlaybackState(null);
-        return;
-      }
-      const safeState = { ...state, url };
+        const safeState = { ...state, url };
 
-      // Detect context at play time (dynamic: mobile / browser / TV)
-      const { getPlaybackContext } = await import('../utils/playbackContext');
-      const context = await getPlaybackContext();
+        // Detect context at play time (dynamic: mobile / browser / TV)
+        const { getPlaybackContext } = await import('../utils/playbackContext');
+        const context = await getPlaybackContext();
 
-      if (context === 'android') {
+        if (context === 'android') {
+          try {
+            const cap = await import('@capacitor/core');
+            const { registerPlugin } = cap;
+            const OpenWith = registerPlugin<{ playInVlc: (opts: { url: string }) => Promise<void> }>('OpenWith');
+            await OpenWith.playInVlc({ url: safeState.url });
+            return;
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : 'VLC playback failed';
+            setPlaybackError(msg);
+            setPlaybackState(null);
+            return;
+          }
+        }
+
+        if (context === 'web') {
+          setPlaybackState(safeState);
+          return;
+        }
+        // TV browser: open in new tab so the TV's player or external app can use proper codecs
+        if (context === 'webTV') {
+          try {
+            const w = window.open(safeState.url, '_blank', 'noopener,noreferrer');
+            if (!w) setPlaybackError('Popup blocked. Allow popups or use in-app player.');
+          } catch {
+            setPlaybackState(safeState);
+          }
+          return;
+        }
+
+        // nativeOther (e.g. iOS): respect external player preference
+        if (!preferExternalPlayer) {
+          setPlaybackState(safeState);
+          return;
+        }
         try {
           const cap = await import('@capacitor/core');
-          const { registerPlugin } = cap;
-          const OpenWith = registerPlugin<{ playInVlc: (opts: { url: string }) => Promise<void> }>('OpenWith');
-          await OpenWith.playInVlc({ url: safeState.url });
-          return;
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : 'VLC playback failed';
-          setPlaybackError(msg);
-          setPlaybackState(null);
-          return;
-        }
-      }
+          const { Capacitor, registerPlugin } = cap;
+          const isNative = Capacitor.isNativePlatform();
+          const platform = (Capacitor.getPlatform?.() ?? '').toLowerCase();
+          const mode = externalPlayerMode;
 
-      if (context === 'web' || context === 'webTV') {
-        setPlaybackState(safeState);
-        return;
-      }
-
-      // nativeOther (e.g. iOS): respect external player preference
-      if (!preferExternalPlayer) {
-        setPlaybackState(safeState);
-        return;
-      }
-      try {
-        const cap = await import('@capacitor/core');
-        const { Capacitor, registerPlugin } = cap;
-        const isNative = Capacitor.isNativePlatform();
-        const platform = (Capacitor.getPlatform?.() ?? '').toLowerCase();
-        const mode = externalPlayerMode;
-
-        if (mode === 'chooser' && isNative && platform === 'android') {
-          try {
-            const OpenWith = registerPlugin<{ openWith: (opts: { url: string }) => Promise<void> }>('OpenWith');
-            await OpenWith.openWith({ url: safeState.url });
-            return;
-          } catch {
-            setPlaybackState(safeState);
-            return;
+          if (mode === 'chooser' && isNative && platform === 'android') {
+            try {
+              const OpenWith = registerPlugin<{ openWith: (opts: { url: string }) => Promise<void> }>('OpenWith');
+              await OpenWith.openWith({ url: safeState.url });
+              return;
+            } catch {
+              setPlaybackState(safeState);
+              return;
+            }
           }
-        }
 
-        if (mode === 'browser' || !isNative) {
-          if (isNative) {
-            const { InAppBrowser } = await import('@capacitor/inappbrowser');
-            await InAppBrowser.openInExternalBrowser({ url: safeState.url });
-            return;
+          if (mode === 'browser' || !isNative) {
+            if (isNative) {
+              const { InAppBrowser } = await import('@capacitor/inappbrowser');
+              await InAppBrowser.openInExternalBrowser({ url: safeState.url });
+              return;
+            }
+            try {
+              window.open(safeState.url, '_blank', 'noopener,noreferrer');
+              return;
+            } catch {
+              setPlaybackState(safeState);
+              return;
+            }
           }
-          try {
-            window.open(safeState.url, '_blank', 'noopener,noreferrer');
-            return;
-          } catch {
-            setPlaybackState(safeState);
-            return;
-          }
-        }
 
-        setPlaybackState(safeState);
-      } catch {
-        setPlaybackState(safeState);
+          setPlaybackState(safeState);
+        } catch {
+          setPlaybackState(safeState);
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Playback failed';
+        setPlaybackError(msg);
+        setPlaybackState(null);
       }
     },
     [preferExternalPlayer, externalPlayerMode, serverBaseUrl]
