@@ -455,21 +455,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         const data = loadPersistedData();
         const useServer = !!getServerBaseUrl();
-        if (!useServer) {
-          setChannels(data.channels);
-          setEpg(data.epg);
-          setVodMovies(data.vodMovies);
-          setVodSeries(data.vodSeries);
-          setVodFromM3u(data.vodFromM3u);
-          if (data.channels.length === 0) {
-            const { channels: initialChannels, vodItems: initialVod } = parseM3u(INLINE_SAMPLE_M3U);
-            const initialEpg = parseXmltv(SAMPLE_XMLTV);
-            setChannels(initialChannels);
-            setVodFromM3u(initialVod);
-            setEpg(initialEpg);
-          }
-          catalogHydratedRef.current = true;
+        // Always restore catalog from cache (including in server mode) so it persists when switching users
+        setChannels(data.channels);
+        setEpg(data.epg);
+        setVodMovies(Array.isArray(data.vodMovies) ? data.vodMovies.slice(0, 100) : []);
+        setVodSeries(Array.isArray(data.vodSeries) ? data.vodSeries.slice(0, 50) : []);
+        setVodFromM3u(data.vodFromM3u);
+        if (!useServer && data.channels.length === 0) {
+          const { channels: initialChannels, vodItems: initialVod } = parseM3u(INLINE_SAMPLE_M3U);
+          const initialEpg = parseXmltv(SAMPLE_XMLTV);
+          setChannels(initialChannels);
+          setVodFromM3u(initialVod);
+          setEpg(initialEpg);
         }
+        catalogHydratedRef.current = true;
         setM3uUrl(data.m3uUrl);
         setEpgUrl(data.epgUrl);
         setXtreamConfigState(data.xtreamConfig);
