@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>Dipolar App</Name>
-  <Repository>dipolar-app:latest</Repository>
-  <Registry>https://github.com/killamfkr/dipolar2.0</Registry>
+  <Repository>ghcr.io/killamfkr/dipolar-app:latest</Repository>
+  <Registry>https://github.com/killamfkr/dipolar2.0/pkgs/container/dipolar-app</Registry>
   <Network>bridge</Network>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>

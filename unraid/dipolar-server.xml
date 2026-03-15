@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>Dipolar Server</Name>
-  <Repository>dipolar-server:latest</Repository>
-  <Registry>https://github.com/killamfkr/dipolar2.0</Registry>
+  <Repository>ghcr.io/killamfkr/dipolar-server:latest</Repository>
+  <Registry>https://github.com/killamfkr/dipolar2.0/pkgs/container/dipolar-server</Registry>
   <Network>host</Network>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
@@ -16,7 +16,7 @@
   <ExtraParams/>
   <PostArgs/>
   <CPUset/>
-  <Description>API backend for Dipolar. Uses Host network so the API is at Unraid-IP:3333. Build the image from the repo (docker compose build). Add the Dipolar App container so the UI can reach this API via host.docker.internal:3333.</Description>
+  <Description>API backend for Dipolar. Uses Host network so the API is at Unraid-IP:3333. Image is published to GitHub Container Registry; add the Dipolar App container so the UI can reach this API via host.docker.internal:3333.</Description>
   <Networking>
     <Mode>host</Mode>
     <Publish/>

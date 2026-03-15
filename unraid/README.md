@@ -4,14 +4,11 @@ Use these templates to run Dipolar (Streamio IPTV) as two containers on Unraid i
 
 ## Prerequisites
 
-Build the images once from the repo (e.g. on Unraid or any machine that can push to your server):
+Images are published to **GitHub Container Registry** (ghcr.io). Unraid will pull them when you add the containers—no need to build locally.
 
-```bash
-cd /mnt/user/appdata/dipolar2.0   # or wherever you cloned
-docker compose build
-```
+If you prefer to build from source (e.g. after changing the code), clone the repo and run `docker compose build`, then change the template Repository back to `dipolar-server:latest` / `dipolar-app:latest` for local images.
 
-Or use the [Docker Compose plugin](https://forums.unraid.net/topic/114047-docker-compose-manager/) and run `docker compose up -d` from the repo—no templates needed.
+Alternatively, use the [Docker Compose plugin](https://forums.unraid.net/topic/114047-docker-compose-manager/) and run `docker compose up -d` from the repo—no templates needed.
 
 ## Adding the templates
 
@@ -33,4 +30,5 @@ No custom network or Network dropdown needed. The server uses **Host** network (
 - **Dipolar Server** uses **Host** network, so the API listens on the Unraid host on port **3333** (no port mapping).
 - **Dipolar App** uses **Bridge** and talks to the API at `host.docker.internal:3333` (Extra Parameters add that hostname).
 - You don’t need to change any Network setting in the Docker UI; the templates handle it.
-- To update: pull or rebuild the images, then recreate the containers from the same templates.
+- To update: **Docker** → select container → **Recreate** (or pull the image first).
+- If pull fails with “access denied”, the GitHub package may be private: go to the repo → **Packages** (right side) → open **dipolar-server** or **dipolar-app** → **Package settings** → change **Visibility** to **Public**.
