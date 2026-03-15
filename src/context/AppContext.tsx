@@ -569,32 +569,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return;
       }
       const safeState = { ...state, url };
+
+      // Android: always use built-in VLC (forced internal player; no external option)
+      try {
+        const cap = await import('@capacitor/core');
+        const { Capacitor, registerPlugin } = cap;
+        if (Capacitor.isNativePlatform() && Capacitor.getPlatform?.() === 'android') {
+          const OpenWith = registerPlugin<{ playInVlc: (opts: { url: string }) => Promise<void> }>('OpenWith');
+          await OpenWith.playInVlc({ url: safeState.url });
+          return;
+        }
+      } catch (e) {
+        if (typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent)) {
+          const msg = e instanceof Error ? e.message : 'VLC playback failed';
+          setPlaybackError(msg);
+          setPlaybackState(null);
+          return;
+        }
+      }
+
+      // Web: always use in-app player (forced; no external option)
+      const cap = await import('@capacitor/core');
+      const { Capacitor } = cap;
+      if (!Capacitor.isNativePlatform()) {
+        setPlaybackState(safeState);
+        return;
+      }
+
+      // iOS / other native: respect external player preference
       const mode = externalPlayerMode;
       const isAndroid =
         typeof navigator !== 'undefined' &&
         /android/i.test(navigator.userAgent);
 
       if (!preferExternalPlayer) {
-        // On Android use built-in VLC player (codecs/audio); otherwise in-app web player
-        if (isAndroid) {
-          try {
-            const cap = await import('@capacitor/core');
-            const { Capacitor, registerPlugin } = cap;
-            if (Capacitor.isNativePlatform() && Capacitor.getPlatform?.() === 'android') {
-              const OpenWith = registerPlugin<{ playInVlc: (opts: { url: string }) => Promise<void> }>('OpenWith');
-              await OpenWith.playInVlc({ url: safeState.url });
-              return;
-            }
-          } catch {
-            /* fallback to in-app player */
-          }
-        }
         setPlaybackState(safeState);
         return;
       }
       try {
-        const cap = await import('@capacitor/core');
-        const { Capacitor, registerPlugin } = cap;
+        const { registerPlugin } = cap;
         const isNative = Capacitor.isNativePlatform();
         const platform = (Capacitor.getPlatform?.() ?? '').toLowerCase();
 
@@ -604,15 +617,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
             await OpenWith.openWith({ url: safeState.url });
             return;
           } catch {
-            try {
-              const Plugins = (Capacitor as unknown as { Plugins?: { OpenWith?: { openWith: (opts: { url: string }) => Promise<void> } } }).Plugins;
-              if (Plugins?.OpenWith?.openWith) {
-                await Plugins.OpenWith.openWith({ url: safeState.url });
-                return;
-              }
-            } catch {
-              /* ignore */
-            }
             setPlaybackState(safeState);
             return;
           }

@@ -188,6 +188,16 @@ export function Settings() {
   const [adminError, setAdminError] = useState<string | null>(null);
   const [adminLoading, setAdminLoading] = useState(false);
   const [serverUrlInput, setServerUrlInput] = useState('');
+  const [isAndroid, setIsAndroid] = useState(false);
+  const [isWeb, setIsWeb] = useState(false);
+
+  useEffect(() => {
+    import('@capacitor/core').then(({ Capacitor }) => {
+      const native = Capacitor.isNativePlatform();
+      setIsAndroid(native && Capacitor.getPlatform?.() === 'android');
+      setIsWeb(!native);
+    }).catch(() => setIsWeb(true));
+  }, []);
 
   useEffect(() => {
     setM3uInput(m3uUrl);
@@ -415,41 +425,53 @@ export function Settings() {
         ) : null}
 
         <h3 className={styles.subHeading}>Playback</h3>
-        <p className={styles.desc}>
-          When off, streams play in-app: on Android the built-in VLC player is used (good codecs and audio). When on, streams open externally: share (VLC/MX Player) or system browser.
-        </p>
-        <div className={styles.row}>
-          <label className={styles.checkLabel}>
-            <input
-              type="checkbox"
-              checked={preferExternalPlayer}
-              onChange={(e) => setPreferExternalPlayer(e.target.checked)}
-            />
-            <span>Play in external player</span>
-          </label>
-        </div>
-        {preferExternalPlayer && (
-          <div className={styles.externalChoice}>
-            <p className={styles.desc}>How to open the stream:</p>
-            <label className={styles.radioLabel}>
-              <input
-                type="radio"
-                name="externalPlayerMode"
-                checked={externalPlayerMode === 'chooser'}
-                onChange={() => setExternalPlayerMode('chooser')}
-              />
-              <span>Share stream (pick VLC, MX Player, etc. for correct codecs)</span>
-            </label>
-            <label className={styles.radioLabel}>
-              <input
-                type="radio"
-                name="externalPlayerMode"
-                checked={externalPlayerMode === 'browser'}
-                onChange={() => setExternalPlayerMode('browser')}
-              />
-              <span>Open in system browser</span>
-            </label>
-          </div>
+        {isAndroid ? (
+          <p className={styles.desc}>
+            On this device playback always uses the built-in VLC player (full codecs for IPTV).
+          </p>
+        ) : isWeb ? (
+          <p className={styles.desc}>
+            Playback always uses the in-app player (HLS and browser-supported formats).
+          </p>
+        ) : (
+          <>
+            <p className={styles.desc}>
+              When off, streams play in-app in the web player. When on, streams open externally: share (VLC, MX Player) or system browser.
+            </p>
+            <div className={styles.row}>
+              <label className={styles.checkLabel}>
+                <input
+                  type="checkbox"
+                  checked={preferExternalPlayer}
+                  onChange={(e) => setPreferExternalPlayer(e.target.checked)}
+                />
+                <span>Play in external player</span>
+              </label>
+            </div>
+            {preferExternalPlayer && (
+              <div className={styles.externalChoice}>
+                <p className={styles.desc}>How to open the stream:</p>
+                <label className={styles.radioLabel}>
+                  <input
+                    type="radio"
+                    name="externalPlayerMode"
+                    checked={externalPlayerMode === 'chooser'}
+                    onChange={() => setExternalPlayerMode('chooser')}
+                  />
+                  <span>Share stream (pick VLC, MX Player, etc. for correct codecs)</span>
+                </label>
+                <label className={styles.radioLabel}>
+                  <input
+                    type="radio"
+                    name="externalPlayerMode"
+                    checked={externalPlayerMode === 'browser'}
+                    onChange={() => setExternalPlayerMode('browser')}
+                  />
+                  <span>Open in system browser</span>
+                </label>
+              </div>
+            )}
+          </>
         )}
       </section>
 

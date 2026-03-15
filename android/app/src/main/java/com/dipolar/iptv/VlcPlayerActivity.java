@@ -12,8 +12,12 @@ import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
 import org.videolan.libvlc.util.VLCVideoLayout;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Full-screen in-app player using LibVLC (hardware decode, broad codec support).
+ * Full-screen in-app player using LibVLC (libvlc-all: full codecs for IPTV).
+ * Supports HLS, MPEG-TS, RTSP, RTMP, and common codecs (H.264, HEVC, AAC, AC3, etc.).
  * Started with Intent extra EXTRA_STREAM_URL. Close button returns to the app.
  */
 public class VlcPlayerActivity extends AppCompatActivity {
@@ -23,6 +27,23 @@ public class VlcPlayerActivity extends AppCompatActivity {
     private LibVLC libVlc;
     private MediaPlayer mediaPlayer;
     private VLCVideoLayout videoLayout;
+
+    /**
+     * LibVLC options tuned for IPTV: live/low-latency, HW decode, RTSP over TCP, codec support.
+     * libvlc-all AAR includes full codec set (no extra plugins needed).
+     */
+    private static List<String> getIptvLibVlcOptions() {
+        List<String> options = new ArrayList<>();
+        options.add("--network-caching=2000");   // buffer ms for stability
+        options.add("--live-caching=500");       // live stream buffer
+        options.add("--rtsp-tcp");               // RTSP over TCP (reliable)
+        options.add("--avcodec-hw=any");         // use hardware decode when available
+        options.add("--no-drop-late-frames");   // avoid skipping for live
+        options.add("--no-skip-frames");
+        options.add("--clock-jitter=0");
+        options.add("--clock-synchro=0");
+        return options;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,13 +71,14 @@ public class VlcPlayerActivity extends AppCompatActivity {
         }
 
         try {
-            libVlc = new LibVLC(this);
+            libVlc = new LibVLC(this, getIptvLibVlcOptions());
             mediaPlayer = new MediaPlayer(libVlc);
             mediaPlayer.attachViews(videoLayout, null, false, false);
 
             Media media = new Media(libVlc, Uri.parse(url));
-            media.setHWDecoderEnabled(true, false);
-            media.addOption(":network-caching=1500");
+            media.setHWDecoderEnabled(true, false);  // enable HW decode, fallback to software if needed
+            media.addOption(":network-caching=2000");
+            media.addOption(":live-caching=500");
 
             mediaPlayer.setMedia(media);
             media.release();
