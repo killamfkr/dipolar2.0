@@ -13,10 +13,10 @@
   <WebUI>http://[IP]:[PORT:3000]/</WebUI>
   <TemplateURL/>
   <Icon>/plugins/dynamix.docker.manager/images/question.png</Icon>
-  <ExtraParams>--link dipolar-server:server</ExtraParams>
+  <ExtraParams>--add-host=host.docker.internal:host-gateway</ExtraParams>
   <PostArgs/>
   <CPUset/>
-  <Description>Web UI for Dipolar. Requires the Dipolar Server container running with name &quot;dipolar-server&quot;. Build both images from the repo: docker compose build. Then add Dipolar Server first, then add this container (Unraid applies the link so the app can reach the API at hostname &quot;server&quot;).</Description>
+  <Description>Web UI for Dipolar. Requires Dipolar Server running with Host network (so the API is on port 3333 on the Unraid host). This container reaches it via host.docker.internal:3333. No custom network or Network dropdown needed.</Description>
   <Networking>
     <Mode>bridge</Mode>
     <Publish>

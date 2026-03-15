@@ -3,12 +3,12 @@
   <Name>Dipolar Server</Name>
   <Repository>dipolar-server:latest</Repository>
   <Registry>https://github.com/killamfkr/dipolar2.0</Registry>
-  <Network>bridge</Network>
+  <Network>host</Network>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
   <Support>https://github.com/killamfkr/dipolar2.0/issues</Support>
   <Project>https://github.com/killamfkr/dipolar2.0</Project>
-  <Overview>API server for Dipolar (Streamio IPTV). Run this first; the Dipolar App container connects to it. No host port needed—only the app talks to it.</Overview>
+  <Overview>API server for Dipolar (Streamio IPTV). Uses Host network so it listens on port 3333 on the Unraid host. Run this first, then add the Dipolar App container.</Overview>
   <Category>MediaServer:Other</Category>
   <WebUI/>
   <TemplateURL/>
@@ -16,9 +16,9 @@
   <ExtraParams/>
   <PostArgs/>
   <CPUset/>
-  <Description>API backend for Dipolar. Build the image from the repo (docker compose build) or use the Docker Compose plugin. Add the Dipolar App container and link it to this container so the app can reach the API at hostname &quot;server&quot;.</Description>
+  <Description>API backend for Dipolar. Uses Host network so the API is at Unraid-IP:3333. Build the image from the repo (docker compose build). Add the Dipolar App container so the UI can reach this API via host.docker.internal:3333.</Description>
   <Networking>
-    <Mode>bridge</Mode>
+    <Mode>host</Mode>
     <Publish/>
   </Networking>
   <Environment>

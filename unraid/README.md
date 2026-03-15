@@ -22,13 +22,15 @@ Or use the [Docker Compose plugin](https://forums.unraid.net/topic/114047-docker
 
 ## Installing the containers
 
-1. **Docker** → **Add Container**.
-2. Under **Template**, choose **Dipolar Server**. Leave the name as `dipolar-server` (the app container links to this name). Create the container.
-3. **Add Container** again, choose **Dipolar App**. Leave **Extra Parameters** as `--link dipolar-server:server` so the app can reach the API. Set the host port (e.g. 3000) if you want. Create the container.
-4. Open **http://UNRAID_IP:3000** in your browser for the app.
+No custom network or Network dropdown needed. The server uses **Host** network (API on the Unraid host:3333); the app uses **Bridge** and reaches the host via `host.docker.internal`.
+
+1. **Docker** → **Add Container** → choose **Dipolar Server**. Leave **Network type** as **Host** (the template sets this). Create the container.
+2. **Add Container** again → **Dipolar App**. Leave **Extra Parameters** as `--add-host=host.docker.internal:host-gateway` (the template sets this). Set the host port (e.g. 3000). Create.
+3. Open **http://UNRAID_IP:3000** in your browser for the app.
 
 ## Notes
 
-- The **Dipolar Server** container has no published port; only the app talks to it.
-- The **Dipolar App** container must be able to resolve hostname `server` to the API container; the template uses `--link dipolar-server:server` for that.
+- **Dipolar Server** uses **Host** network, so the API listens on the Unraid host on port **3333** (no port mapping).
+- **Dipolar App** uses **Bridge** and talks to the API at `host.docker.internal:3333` (Extra Parameters add that hostname).
+- You don’t need to change any Network setting in the Docker UI; the templates handle it.
 - To update: pull or rebuild the images, then recreate the containers from the same templates.
