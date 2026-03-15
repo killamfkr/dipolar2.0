@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { getPlaybackContext, PLAYBACK_LABELS, type PlaybackContext } from '../utils/playbackContext';
 import styles from './Settings.module.css';
 
 function AddUserForm() {
@@ -188,15 +189,15 @@ export function Settings() {
   const [adminError, setAdminError] = useState<string | null>(null);
   const [adminLoading, setAdminLoading] = useState(false);
   const [serverUrlInput, setServerUrlInput] = useState('');
-  const [isAndroid, setIsAndroid] = useState(false);
-  const [isWeb, setIsWeb] = useState(false);
+  const [playbackContext, setPlaybackContext] = useState<PlaybackContext | null>(null);
+
+  const updatePlaybackContext = () => getPlaybackContext().then(setPlaybackContext);
 
   useEffect(() => {
-    import('@capacitor/core').then(({ Capacitor }) => {
-      const native = Capacitor.isNativePlatform();
-      setIsAndroid(native && Capacitor.getPlatform?.() === 'android');
-      setIsWeb(!native);
-    }).catch(() => setIsWeb(true));
+    updatePlaybackContext();
+    const onVisibility = () => { if (document.visibilityState === 'visible') updatePlaybackContext(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
   }, []);
 
   useEffect(() => {
@@ -425,18 +426,18 @@ export function Settings() {
         ) : null}
 
         <h3 className={styles.subHeading}>Playback</h3>
-        {isAndroid ? (
+        {playbackContext === 'android' ? (
           <p className={styles.desc}>
-            On this device playback always uses the built-in VLC player (full codecs for IPTV).
+            Here: <strong>{PLAYBACK_LABELS.android}</strong>. Playback always uses the built-in VLC player (full codecs for IPTV).
           </p>
-        ) : isWeb ? (
+        ) : playbackContext === 'web' || playbackContext === 'webTV' ? (
           <p className={styles.desc}>
-            Playback always uses the in-app player (HLS and browser-supported formats).
+            Here: <strong>{playbackContext === 'webTV' ? PLAYBACK_LABELS.webTV : PLAYBACK_LABELS.web}</strong>. Playback always uses the in-app player (HLS and browser-supported formats).
           </p>
-        ) : (
+        ) : playbackContext === 'nativeOther' ? (
           <>
             <p className={styles.desc}>
-              When off, streams play in-app in the web player. When on, streams open externally: share (VLC, MX Player) or system browser.
+              Here: <strong>{PLAYBACK_LABELS.nativeOther}</strong>. When off, streams play in-app; when on, open externally (share or browser).
             </p>
             <div className={styles.row}>
               <label className={styles.checkLabel}>
@@ -472,6 +473,8 @@ export function Settings() {
               </div>
             )}
           </>
+        ) : (
+          <p className={styles.desc}>Detecting playback mode…</p>
         )}
       </section>
 

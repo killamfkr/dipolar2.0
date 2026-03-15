@@ -570,17 +570,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       const safeState = { ...state, url };
 
-      // Android: always use built-in VLC (forced internal player; no external option)
-      try {
-        const cap = await import('@capacitor/core');
-        const { Capacitor, registerPlugin } = cap;
-        if (Capacitor.isNativePlatform() && Capacitor.getPlatform?.() === 'android') {
+      // Detect context at play time (dynamic: mobile / browser / TV)
+      const { getPlaybackContext } = await import('../utils/playbackContext');
+      const context = await getPlaybackContext();
+
+      if (context === 'android') {
+        try {
+          const cap = await import('@capacitor/core');
+          const { registerPlugin } = cap;
           const OpenWith = registerPlugin<{ playInVlc: (opts: { url: string }) => Promise<void> }>('OpenWith');
           await OpenWith.playInVlc({ url: safeState.url });
           return;
-        }
-      } catch (e) {
-        if (typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent)) {
+        } catch (e) {
           const msg = e instanceof Error ? e.message : 'VLC playback failed';
           setPlaybackError(msg);
           setPlaybackState(null);
@@ -588,28 +589,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Web: always use in-app player (forced; no external option)
-      const cap = await import('@capacitor/core');
-      const { Capacitor } = cap;
-      if (!Capacitor.isNativePlatform()) {
+      if (context === 'web' || context === 'webTV') {
         setPlaybackState(safeState);
         return;
       }
 
-      // iOS / other native: respect external player preference
-      const mode = externalPlayerMode;
-      const isAndroid =
-        typeof navigator !== 'undefined' &&
-        /android/i.test(navigator.userAgent);
-
+      // nativeOther (e.g. iOS): respect external player preference
       if (!preferExternalPlayer) {
         setPlaybackState(safeState);
         return;
       }
       try {
-        const { registerPlugin } = cap;
+        const cap = await import('@capacitor/core');
+        const { Capacitor, registerPlugin } = cap;
         const isNative = Capacitor.isNativePlatform();
         const platform = (Capacitor.getPlatform?.() ?? '').toLowerCase();
+        const mode = externalPlayerMode;
 
         if (mode === 'chooser' && isNative && platform === 'android') {
           try {
@@ -622,7 +617,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        if (mode === 'browser' || !isAndroid) {
+        if (mode === 'browser' || !isNative) {
           if (isNative) {
             const { InAppBrowser } = await import('@capacitor/inappbrowser');
             await InAppBrowser.openInExternalBrowser({ url: safeState.url });
