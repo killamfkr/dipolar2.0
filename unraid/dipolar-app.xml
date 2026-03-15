@@ -29,5 +29,5 @@
   </Networking>
   <Environment/>
   <Labels/>
-  <Config Name="WebUI" Target="3000" Default="3000" Mode="tcp" Description="Host port for the web app" Type="Port" Display="always" Required="true" Mask="false"/>
+  <Config Name="WebUI" Target="80" Default="3000" Mode="tcp" Description="Host port for the web app (container listens on 80)" Type="Port" Display="always" Required="true" Mask="false"/>
 </Container>

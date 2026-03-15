@@ -26,7 +26,7 @@ When the repo’s `unraid/` folder changes (e.g. new image URLs or settings), co
 Images pull from **ghcr.io** (no local build). No custom network or Network dropdown needed.
 
 1. **Docker** → **Add Container** → **Template** → **Dipolar Server**. Leave **Network type** as **Host**. Create.
-2. **Add Container** again → **Template** → **Dipolar App**. Leave **Extra Parameters** as `--add-host=host.docker.internal:host-gateway`. Set **Host port** to **3000** (or another free port). Create.
+2. **Add Container** again → **Template** → **Dipolar App**. Leave **Extra Parameters** as `--add-host=host.docker.internal:host-gateway`. Set **Host port** to **3000** (or another free port). The **container port** must be **80** (nginx listens on 80 inside the image)—the template sets this. Create.
 3. Open **http://UNRAID_IP:3000** in your browser (use your server’s IP and the port you chose).
 
 ## Notes
