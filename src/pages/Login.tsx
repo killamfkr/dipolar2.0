@@ -6,7 +6,6 @@ import styles from './Login.module.css';
 
 export function LoginPage() {
   const auth = useAuth();
-  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -16,16 +15,13 @@ export function LoginPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const result =
-      mode === 'login'
-        ? await auth.loginUser(username, pin)
-        : await auth.registerUser(username, pin);
+    const result = await auth.loginUser(username, pin);
     setLoading(false);
     if (result.success) {
       setUsername('');
       setPin('');
     } else {
-      setError(result.error ?? (mode === 'login' ? 'Login failed' : 'Registration failed'));
+      setError(result.error ?? 'Login failed');
     }
   };
 
@@ -39,11 +35,7 @@ export function LoginPage() {
           <Logo size={40} />
         </div>
         <h1 className={styles.title}>Dipolar</h1>
-        <p className={styles.subtitle}>
-          {mode === 'login'
-            ? 'Sign in to continue'
-            : 'Create an account to get started'}
-        </p>
+        <p className={styles.subtitle}>Sign in to continue</p>
         <form className={styles.form} onSubmit={handleSubmit}>
           <label className={styles.label} htmlFor="login-username">
             Username
@@ -60,7 +52,7 @@ export function LoginPage() {
             disabled={loading}
           />
           <label className={styles.label} htmlFor="login-pin">
-            {mode === 'register' ? 'Choose a PIN (min 4 characters)' : 'PIN'}
+            PIN
           </label>
           <input
             id="login-pin"
@@ -70,28 +62,15 @@ export function LoginPage() {
             value={pin}
             onChange={(e) => setPin(e.target.value)}
             placeholder="••••"
-            autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+            autoComplete="current-password"
             disabled={loading}
           />
           {error && <p className={styles.error}>{error}</p>}
           <button type="submit" className={styles.btn} disabled={loading}>
-            {loading ? '…' : mode === 'login' ? 'Sign in' : 'Create account'}
+            {loading ? '…' : 'Sign in'}
           </button>
         </form>
-        <hr className={styles.divider} />
-        <div className={styles.toggleMode}>
-          <button
-            type="button"
-            onClick={() => {
-              setMode(mode === 'login' ? 'register' : 'login');
-              setError(null);
-            }}
-          >
-            {mode === 'login'
-              ? 'No account? Register'
-              : 'Have an account? Sign in'}
-          </button>
-        </div>
+        <p className={styles.hint}>Ask your admin to create an account for you.</p>
       </div>
     </div>
   );

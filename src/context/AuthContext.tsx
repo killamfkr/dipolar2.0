@@ -16,12 +16,14 @@ const CURRENT_USER_ID_KEY = 'streamio-current-user-id';
 export interface AppUser {
   id: string;
   username: string;
+  approved: boolean;
 }
 
 interface StoredUser {
   id: string;
   username: string;
   pinHash: string;
+  approved?: boolean;
 }
 
 interface AuthContextValue {
@@ -34,9 +36,12 @@ interface AuthContextValue {
   // User
   currentUser: AppUser | null;
   users: AppUser[];
-  registerUser: (username: string, pin: string) => Promise<{ success: boolean; error?: string }>;
   loginUser: (username: string, pin: string) => Promise<{ success: boolean; error?: string }>;
   logoutUser: () => void;
+  changePin: (currentPin: string, newPin: string) => Promise<{ success: boolean; error?: string }>;
+  createUser: (username: string, initialPin: string) => Promise<{ success: boolean; error?: string }>;
+  removeUser: (userId: string) => void;
+  refreshUsersFromStorage: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -46,7 +51,11 @@ function loadStoredUsers(): StoredUser[] {
     const raw = localStorage.getItem(USERS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((u: StoredUser) => ({
+      ...u,
+      approved: u.approved !== false,
+    }));
   } catch {
     return [];
   }
@@ -87,7 +96,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const currentUser: AppUser | null =
     currentUserId && storedUsers.length > 0
-      ? storedUsers.find((u) => u.id === currentUserId) ?? null
+      ? (() => {
+          const u = storedUsers.find((u) => u.id === currentUserId);
+          return u ? { id: u.id, username: u.username, approved: u.approved !== false } : null;
+        })()
       : null;
 
   useEffect(() => {
@@ -141,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               try {
                 const parsed = JSON.parse(value);
                 if (Array.isArray(parsed) && parsed.length > 0) {
-                  setStoredUsers(parsed);
+                  setStoredUsers(parsed.map((u: StoredUser) => ({ ...u, approved: u.approved !== false })));
                 }
               } catch {
                 /* ignore */
@@ -190,22 +202,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAdminAuthenticated(false);
   }, []);
 
-  const registerUser = useCallback(async (username: string, pin: string) => {
+  const createUser = useCallback(async (username: string, initialPin: string) => {
     const un = username.trim().toLowerCase();
-    const p = pin.trim();
-    if (!un || !p) return { success: false, error: 'Username and PIN required' };
+    const p = initialPin.trim();
+    if (!un || !p) return { success: false, error: 'Username and initial PIN required' };
     if (p.length < 4) return { success: false, error: 'PIN must be at least 4 characters' };
     const existing = storedUsers.find((u) => u.username.toLowerCase() === un);
     if (existing) return { success: false, error: 'Username already exists' };
     try {
       const pinHash = await hashPassword(p);
       const id = `user-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const newUser: StoredUser = { id, username: un, pinHash };
+      const newUser: StoredUser = { id, username: un, pinHash, approved: true };
       setStoredUsers((prev) => [...prev, newUser]);
-      setCurrentUserId(id);
       return { success: true };
     } catch (e) {
-      return { success: false, error: e instanceof Error ? e.message : 'Registration failed' };
+      return { success: false, error: e instanceof Error ? e.message : 'Failed to create user' };
     }
   }, [storedUsers]);
 
@@ -214,6 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const p = pin.trim();
     const user = storedUsers.find((u) => u.username.toLowerCase() === un);
     if (!user) return { success: false, error: 'User not found' };
+    if (user.approved === false) return { success: false, error: 'Account not approved' };
     try {
       const ok = await verifyPassword(p, user.pinHash);
       if (!ok) return { success: false, error: 'Wrong PIN' };
@@ -228,6 +240,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCurrentUserId(null);
   }, []);
 
+  const changePin = useCallback(
+    async (currentPin: string, newPin: string) => {
+      if (!currentUserId) return { success: false, error: 'Not logged in' };
+      const user = storedUsers.find((u) => u.id === currentUserId);
+      if (!user) return { success: false, error: 'User not found' };
+      const cur = currentPin.trim();
+      const neu = newPin.trim();
+      if (!cur || !neu) return { success: false, error: 'Current and new PIN required' };
+      if (neu.length < 4) return { success: false, error: 'New PIN must be at least 4 characters' };
+      try {
+        const ok = await verifyPassword(cur, user.pinHash);
+        if (!ok) return { success: false, error: 'Current PIN is wrong' };
+        const pinHash = await hashPassword(neu);
+        setStoredUsers((prev) =>
+          prev.map((u) => (u.id === currentUserId ? { ...u, pinHash } : u))
+        );
+        return { success: true };
+      } catch (e) {
+        return { success: false, error: e instanceof Error ? e.message : 'Failed to change PIN' };
+      }
+    },
+    [currentUserId, storedUsers]
+  );
+
+  const removeUser = useCallback((userId: string) => {
+    setStoredUsers((prev) => prev.filter((u) => u.id !== userId));
+    if (currentUserId === userId) setCurrentUserId(null);
+  }, [currentUserId]);
+
+  const refreshUsersFromStorage = useCallback(() => {
+    setStoredUsers(loadStoredUsers());
+  }, []);
+
   const value: AuthContextValue = {
     hasAdminPassword,
     isAdminAuthenticated: adminAuthenticated,
@@ -235,10 +280,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loginAdmin,
     logoutAdmin,
     currentUser,
-    users: storedUsers.map((u) => ({ id: u.id, username: u.username })),
-    registerUser,
+    users: storedUsers.map((u) => ({ id: u.id, username: u.username, approved: u.approved !== false })),
     loginUser,
     logoutUser,
+    changePin,
+    createUser,
+    removeUser,
+    refreshUsersFromStorage,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -8,7 +8,12 @@ const SERVER_URL_KEY = 'streamio-server-url';
 export function getServerBaseUrl(): string {
   try {
     const u = localStorage.getItem(SERVER_URL_KEY);
-    return (u ?? '').trim().replace(/\/+$/, '');
+    const stored = (u ?? '').trim().replace(/\/+$/, '');
+    if (stored) return stored;
+    // When served from Docker/same host (e.g. http://UNRAID_IP/), use same origin so /api works
+    if (typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost:5173'))
+      return window.location.origin;
+    return '';
   } catch {
     return '';
   }

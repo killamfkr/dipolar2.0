@@ -58,6 +58,8 @@ export function Discover() {
     [playOrOpenExternally]
   );
 
+  const DISCOVER_CAP = 36;
+
   const sortedMovies = useMemo(() => {
     const list = [...vodMovies];
     list.sort((a, b) => {
@@ -68,7 +70,7 @@ export function Discover() {
       const dB = b.added ? new Date(b.added).getTime() : 0;
       return dB - dA;
     });
-    return list;
+    return list.slice(0, DISCOVER_CAP);
   }, [vodMovies]);
 
   const sortedSeries = useMemo(() => {
@@ -78,8 +80,13 @@ export function Discover() {
       const rB = Number(b.rating_5based) || 0;
       return rB - rA;
     });
-    return list;
+    return list.slice(0, DISCOVER_CAP);
   }, [vodSeries]);
+
+  const cappedM3uVod = useMemo(
+    () => vodFromM3u.slice(0, DISCOVER_CAP),
+    [vodFromM3u]
+  );
 
   const playM3uVod = useCallback(
     (item: { url: string; name: string }) => {
@@ -179,6 +186,11 @@ export function Discover() {
         {sortedMovies.length > 0 && (
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Movies</h2>
+            {vodMovies.length > DISCOVER_CAP && (
+              <p className={styles.sectionHint}>
+                Showing {DISCOVER_CAP} of {vodMovies.length}. <Link to="/vod">See all in VOD</Link>.
+              </p>
+            )}
             <div className={styles.cardStrip}>
               {sortedMovies.map((movie) => (
                 <button
@@ -210,8 +222,13 @@ export function Discover() {
         {vodFromM3u.length > 0 && (
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>VOD from M3U</h2>
+            {vodFromM3u.length > DISCOVER_CAP && (
+              <p className={styles.sectionHint}>
+                Showing {DISCOVER_CAP} of {vodFromM3u.length}. <Link to="/vod">See all in VOD</Link>.
+              </p>
+            )}
             <div className={styles.cardStrip}>
-              {vodFromM3u.map((item) => (
+              {cappedM3uVod.map((item) => (
                 <button
                   key={item.id}
                   type="button"
@@ -242,6 +259,9 @@ export function Discover() {
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>Series</h2>
             <p className={styles.sectionHint}>
+              {vodSeries.length > DISCOVER_CAP
+                ? `Showing ${DISCOVER_CAP} of ${vodSeries.length}. `
+                : ''}
               Open a series in <Link to="/vod">VOD</Link> to pick an episode.
             </p>
             <div className={styles.cardStrip}>

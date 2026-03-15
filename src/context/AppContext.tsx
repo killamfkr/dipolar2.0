@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   startTransition,
   type ReactNode,
@@ -347,6 +348,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [preferExternalPlayer, setPreferExternalPlayerState] = useState(loadPreferExternalPlayer);
   const [externalPlayerMode, setExternalPlayerModeState] = useState(loadExternalPlayerMode);
   const [serverBaseUrl, setServerBaseUrlState] = useState(getServerBaseUrl);
+  const catalogHydratedRef = useRef(false);
 
   useEffect(() => {
     setContinueWatching(loadContinueWatching(userId));
@@ -377,6 +379,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setVodMovies((data.vodMovies || []) as VodMovie[]);
       setVodSeries((data.vodSeries || []) as VodSeries[]);
       setVodFromM3u(data.vodFromM3u || []);
+      catalogHydratedRef.current = true;
     } catch {
       /* ignore */
     }
@@ -442,6 +445,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 setVodFromM3u(initialVod);
                 setEpg(initialEpg);
               }
+              catalogHydratedRef.current = true;
             });
           });
         });
@@ -464,6 +468,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setVodFromM3u(initialVod);
             setEpg(initialEpg);
           }
+          catalogHydratedRef.current = true;
         }
         setM3uUrl(data.m3uUrl);
         setEpgUrl(data.epgUrl);
@@ -477,8 +482,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     saveContinueWatching(continueWatching, userId);
   }, [continueWatching, userId]);
 
-  // Persist loaded data whenever it changes
+  // Persist loaded data whenever it changes (skip until we've hydrated so we don't overwrite with empty when a new user logs in)
   useEffect(() => {
+    if (!catalogHydratedRef.current) return;
     savePersistedData({
       channels,
       epg,
@@ -725,6 +731,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         count: nextChannels.length,
       };
       setLastM3uResult(result);
+      catalogHydratedRef.current = true;
       return result;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to parse M3U.';
@@ -834,6 +841,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       message: `Loaded sample EPG: ${sampleEpg.channels.length} channels.`,
       count: sampleEpg.channels.length,
     });
+    catalogHydratedRef.current = true;
   }, []);
 
   const clearLoadResults = useCallback(() => {
@@ -858,6 +866,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setM3uUrl(empty.m3uUrl);
     setEpgUrl(empty.epgUrl);
     setXtreamConfigState(empty.xtreamConfig);
+    catalogHydratedRef.current = true;
   }, []);
 
   const setXtreamConfig = useCallback((config: XtreamConfig | null) => {
@@ -914,6 +923,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         count: channelCount,
       };
       setLastXtreamResult(result);
+      if (success) catalogHydratedRef.current = true;
       return result;
     },
     [loadM3u, loadEpg]
@@ -964,6 +974,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           seriesCount: seriesList.length,
         };
         setLastVodResult(result);
+        catalogHydratedRef.current = true;
         return result;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to load VOD from Xtream.';

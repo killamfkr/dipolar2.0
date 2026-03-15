@@ -4,6 +4,138 @@ import { useAuth } from '../context/AuthContext';
 import { ThemeToggle } from '../components/ThemeToggle';
 import styles from './Settings.module.css';
 
+function AddUserForm() {
+  const auth = useAuth();
+  const [newUsername, setNewUsername] = useState('');
+  const [initialPin, setInitialPin] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(false);
+    if (!newUsername.trim()) {
+      setError('Enter a username');
+      return;
+    }
+    if (initialPin.trim().length < 4) {
+      setError('Initial PIN must be at least 4 characters');
+      return;
+    }
+    setLoading(true);
+    const result = await auth.createUser(newUsername.trim(), initialPin);
+    setLoading(false);
+    if (result.success) {
+      setNewUsername('');
+      setInitialPin('');
+      setSuccess(true);
+    } else {
+      setError(result.error ?? 'Failed to create user');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className={styles.addUserForm}>
+      <div className={styles.row}>
+        <input
+          type="text"
+          placeholder="Username"
+          value={newUsername}
+          onChange={(e) => setNewUsername(e.target.value)}
+          className={styles.input}
+        />
+        <input
+          type="password"
+          placeholder="Initial PIN (min 4)"
+          value={initialPin}
+          onChange={(e) => setInitialPin(e.target.value)}
+          className={styles.input}
+        />
+        <button type="submit" className={styles.btn} disabled={loading}>
+          {loading ? '…' : 'Add user'}
+        </button>
+      </div>
+      {success && <p className={styles.resultSuccess}>User created. Give them the username and initial PIN to sign in.</p>}
+      {error && <p className={styles.resultError}>{error}</p>}
+    </form>
+  );
+}
+
+function ChangePinForm() {
+  const auth = useAuth();
+  const [currentPin, setCurrentPin] = useState('');
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(false);
+    if (newPin !== confirmPin) {
+      setError('New PIN and confirm do not match');
+      return;
+    }
+    if (newPin.trim().length < 4) {
+      setError('New PIN must be at least 4 characters');
+      return;
+    }
+    setLoading(true);
+    const result = await auth.changePin(currentPin, newPin);
+    setLoading(false);
+    if (result.success) {
+      setCurrentPin('');
+      setNewPin('');
+      setConfirmPin('');
+      setSuccess(true);
+    } else {
+      setError(result.error ?? 'Failed to change PIN');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className={styles.changePinForm}>
+      <div className={styles.row}>
+        <input
+          type="password"
+          placeholder="Current PIN"
+          value={currentPin}
+          onChange={(e) => setCurrentPin(e.target.value)}
+          className={styles.input}
+          autoComplete="current-password"
+        />
+        <input
+          type="password"
+          placeholder="New PIN (min 4)"
+          value={newPin}
+          onChange={(e) => setNewPin(e.target.value)}
+          className={styles.input}
+          autoComplete="new-password"
+        />
+        <input
+          type="password"
+          placeholder="Confirm new PIN"
+          value={confirmPin}
+          onChange={(e) => setConfirmPin(e.target.value)}
+          className={styles.input}
+          autoComplete="new-password"
+        />
+      </div>
+      <div className={styles.row}>
+        <button type="submit" className={styles.btn} disabled={loading}>
+          {loading ? '…' : 'Change PIN'}
+        </button>
+      </div>
+      {success && <p className={styles.resultSuccess}>PIN updated.</p>}
+      {error && <p className={styles.resultError}>{error}</p>}
+    </form>
+  );
+}
+
 export function Settings() {
   const auth = useAuth();
   const {
@@ -77,6 +209,10 @@ export function Settings() {
     setServerUrlInput(serverBaseUrl);
   }, [serverBaseUrl]);
 
+  useEffect(() => {
+    if (auth.isAdminAuthenticated) auth.refreshUsersFromStorage();
+  }, [auth.isAdminAuthenticated]);
+
   const handleUserLogin = async () => {
     setUserError(null);
     setUserLoading(true);
@@ -87,19 +223,6 @@ export function Settings() {
       setUserPin('');
     } else {
       setUserError(result.error ?? 'Login failed');
-    }
-  };
-
-  const handleUserRegister = async () => {
-    setUserError(null);
-    setUserLoading(true);
-    const result = await auth.registerUser(userUsername, userPin);
-    setUserLoading(false);
-    if (result.success) {
-      setUserUsername('');
-      setUserPin('');
-    } else {
-      setUserError(result.error ?? 'Registration failed');
     }
   };
 
@@ -211,7 +334,7 @@ export function Settings() {
         ) : (
           <>
             <p className={styles.desc}>
-              Log in or register to keep your theme and continue-watching separate from other users.
+              Log in. Ask your admin to create an account for you.
             </p>
             <div className={styles.row}>
               <input
@@ -223,7 +346,7 @@ export function Settings() {
               />
               <input
                 type="password"
-                placeholder="PIN (min 4 characters)"
+                placeholder="PIN"
                 value={userPin}
                 onChange={(e) => setUserPin(e.target.value)}
                 className={styles.input}
@@ -238,16 +361,17 @@ export function Settings() {
               >
                 {userLoading ? '…' : 'Login'}
               </button>
-              <button
-                type="button"
-                onClick={handleUserRegister}
-                disabled={userLoading || !userUsername.trim() || userPin.length < 4}
-                className={styles.btnSecondary}
-              >
-                Register
-              </button>
             </div>
             {userError && <p className={styles.resultError}>{userError}</p>}
+          </>
+        )}
+        {auth.currentUser && (
+          <>
+            <h3 className={styles.subHeading}>Change PIN</h3>
+            <p className={styles.desc}>
+              Set your own PIN. You will need the current PIN to change it.
+            </p>
+            <ChangePinForm />
           </>
         )}
         <h3 className={styles.subHeading}>Appearance</h3>
@@ -390,6 +514,36 @@ export function Settings() {
                 Admin logout
               </button>
             </div>
+
+            {/* User accounts — admin creates users */}
+            <h3 className={styles.subHeading}>User accounts</h3>
+            <p className={styles.desc}>
+              Create accounts for users. They sign in with the username and initial PIN, then can set their own PIN in Settings.
+            </p>
+            <AddUserForm />
+            <div className={styles.row}>
+              <button type="button" onClick={auth.refreshUsersFromStorage} className={styles.btnSecondary}>
+                Refresh list
+              </button>
+            </div>
+            {auth.users.length > 0 ? (
+              <ul className={styles.userList}>
+                {auth.users.map((u) => (
+                  <li key={u.id} className={styles.userRow}>
+                    <span className={styles.userName}>{u.username}</span>
+                    <button
+                      type="button"
+                      onClick={() => auth.removeUser(u.id)}
+                      className={styles.btnSecondary}
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className={styles.desc}>No users yet. Add one above.</p>
+            )}
 
             {/* IPTV Playlist (M3U) — only when admin authenticated */}
             <h3 className={styles.subHeading}>IPTV Playlist (M3U)</h3>
