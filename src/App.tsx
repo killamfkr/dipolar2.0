@@ -12,8 +12,10 @@ import { Library } from './pages/Library';
 import { Settings } from './pages/Settings';
 
 function AppContent() {
-  const { currentUser } = useAuth();
-  if (!currentUser) {
+  const { currentUser, users } = useAuth();
+  // No users yet: allow access so first-time setup can open Settings and set admin password + create first user
+  const allowWithoutUser = users.length === 0;
+  if (!currentUser && !allowWithoutUser) {
     return <LoginPage />;
   }
   return (

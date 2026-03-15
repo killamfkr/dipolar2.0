@@ -1,7 +1,25 @@
 .layout {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background: var(--bg-base);
+}
+
+.layoutRow {
+  flex: 1;
+  display: flex;
+}
+
+.firstTimeBanner {
+  padding: 0.5rem 1rem;
+  background: var(--accent, #2563eb);
+  color: #fff;
+  text-align: center;
+  font-size: 0.9rem;
+}
+.firstTimeBanner a {
+  color: #fff;
+  text-decoration: underline;
 }
 
 .main {
