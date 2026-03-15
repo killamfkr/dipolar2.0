@@ -1,8 +1,9 @@
 # Full-stack Dipolar: React app + nginx (API proxied to "server" container)
-FROM node:20-alpine AS builder
+# Use Debian-based image: npm install often fails on Alpine (musl) with some deps (e.g. optional native modules)
+FROM node:20-slim AS builder
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm install --ignore-scripts
+RUN npm install --ignore-scripts --no-optional
 COPY . .
 RUN npm run build
 
