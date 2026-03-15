@@ -8,7 +8,7 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/killamfkr/dipolar2.0/issues</Support>
   <Project>https://github.com/killamfkr/dipolar2.0</Project>
-  <Overview>Dipolar (Streamio IPTV) web app: React UI + nginx. Proxies /api to the Dipolar Server container. Open this port in your browser for the full app.</Overview>
+  <Overview>Dipolar web UI. Pulls from GitHub Container Registry (ghcr.io). React app + nginx; proxies /api to Dipolar Server. Open the Web UI port (default 3000) in your browser.</Overview>
   <Category>MediaServer:Other</Category>
   <WebUI>http://[IP]:[PORT:3000]/</WebUI>
   <TemplateURL/>
@@ -16,7 +16,7 @@
   <ExtraParams>--add-host=host.docker.internal:host-gateway</ExtraParams>
   <PostArgs/>
   <CPUset/>
-  <Description>Web UI for Dipolar. Requires Dipolar Server running with Host network (so the API is on port 3333 on the Unraid host). This container reaches it via host.docker.internal:3333. No custom network or Network dropdown needed.</Description>
+  <Description>Web UI for Dipolar (Streamio IPTV). Image is published to ghcr.io—no local build needed. Requires Dipolar Server running (Host network, port 3333). This container uses Bridge and reaches the API at host.docker.internal:3333. Leave Extra Parameters as set by the template.</Description>
   <Networking>
     <Mode>bridge</Mode>
     <Publish>

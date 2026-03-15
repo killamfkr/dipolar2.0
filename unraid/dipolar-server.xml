@@ -8,15 +8,15 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/killamfkr/dipolar2.0/issues</Support>
   <Project>https://github.com/killamfkr/dipolar2.0</Project>
-  <Overview>API server for Dipolar (Streamio IPTV). Uses Host network so it listens on port 3333 on the Unraid host. Run this first, then add the Dipolar App container.</Overview>
+  <Overview>Dipolar API server. Pulls from GitHub Container Registry (ghcr.io). Uses Host network—listens on port 3333 on the Unraid host. Add the Dipolar App container after this.</Overview>
   <Category>MediaServer:Other</Category>
-  <WebUI/>
+  <WebUI>http://[IP]:3333/</WebUI>
   <TemplateURL/>
   <Icon>/plugins/dynamix.docker.manager/images/question.png</Icon>
   <ExtraParams/>
   <PostArgs/>
   <CPUset/>
-  <Description>API backend for Dipolar. Uses Host network so the API is at Unraid-IP:3333. Image is published to GitHub Container Registry; add the Dipolar App container so the UI can reach this API via host.docker.internal:3333.</Description>
+  <Description>API backend for Dipolar (Streamio IPTV). Image is published to ghcr.io—no local build needed. Uses Host network so the API is at Unraid-IP:3333. The Dipolar App container connects to it via host.docker.internal:3333. Create Dipolar Server first, then Dipolar App.</Description>
   <Networking>
     <Mode>host</Mode>
     <Publish/>

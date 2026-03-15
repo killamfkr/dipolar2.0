@@ -17,13 +17,17 @@ Alternatively, use the [Docker Compose plugin](https://forums.unraid.net/topic/1
    - `dipolar-app.xml` → `/boot/config/plugins/dockerMan/templates-user/`
 2. Or add this repo as a **Template Repositories** source in Community Applications (if you publish the repo with the `unraid/` folder and CA supports it).
 
+## Updating the templates
+
+When the repo’s `unraid/` folder changes (e.g. new image URLs or settings), copy the updated XML files over the existing ones in `/boot/config/plugins/dockerMan/templates-user/`. Existing containers keep their settings; new containers you add will use the updated template.
+
 ## Installing the containers
 
-No custom network or Network dropdown needed. The server uses **Host** network (API on the Unraid host:3333); the app uses **Bridge** and reaches the host via `host.docker.internal`.
+Images pull from **ghcr.io** (no local build). No custom network or Network dropdown needed.
 
-1. **Docker** → **Add Container** → choose **Dipolar Server**. Leave **Network type** as **Host** (the template sets this). Create the container.
-2. **Add Container** again → **Dipolar App**. Leave **Extra Parameters** as `--add-host=host.docker.internal:host-gateway` (the template sets this). Set the host port (e.g. 3000). Create.
-3. Open **http://UNRAID_IP:3000** in your browser for the app.
+1. **Docker** → **Add Container** → **Template** → **Dipolar Server**. Leave **Network type** as **Host**. Create.
+2. **Add Container** again → **Template** → **Dipolar App**. Leave **Extra Parameters** as `--add-host=host.docker.internal:host-gateway`. Set **Host port** to **3000** (or another free port). Create.
+3. Open **http://UNRAID_IP:3000** in your browser (use your server’s IP and the port you chose).
 
 ## Notes
 
