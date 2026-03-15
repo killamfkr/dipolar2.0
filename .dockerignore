@@ -1,0 +1,8 @@
+node_modules
+.git
+*.md
+server
+android
+Dockerfile
+docker-compose.yml
+.dockerignore

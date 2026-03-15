@@ -41,15 +41,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: List repo root (for debugging)
-        run: ls -la && test -f package.json && test -f Dockerfile && echo "package.json and Dockerfile present"
-
-      - name: Setup Node and run npm install (same as Docker – captures real error if install fails)
+      - name: Setup Node and build app (no npm inside Docker)
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
       - run: npm install
+      - run: npm run build
 
       - uses: docker/setup-buildx-action@v3
 
@@ -62,7 +60,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile
+          file: ./Dockerfile.app
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/dipolar-app:latest
