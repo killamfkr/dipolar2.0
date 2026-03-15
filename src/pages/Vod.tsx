@@ -139,32 +139,20 @@ function VodContent() {
         });
         return;
       }
-      if (!xtreamConfig) return;
-      const ext = movie.container_extension || 'mp4';
-      const url = buildMovieStreamUrl(xtreamConfig, Number(streamId), ext);
-      if (!url) return;
-      playOrOpenExternally({ url, title: movie.name ?? 'Movie', isLive: false });
+      if (xtreamConfig) {
+        const ext = movie.container_extension || 'mp4';
+        const url = buildMovieStreamUrl(xtreamConfig, Number(streamId), ext);
+        if (url) playOrOpenExternally({ url, title: movie.name ?? 'Movie', isLive: false });
+        return;
+      }
+      // No server or Xtream: still call so user sees error banner
+      playOrOpenExternally({
+        url: `server://vod/movie/${streamId}`,
+        title: movie.name ?? 'Movie',
+        isLive: false,
+      });
     },
     [xtreamConfig, serverBaseUrl, playOrOpenExternally]
-  );
-
-  const openSeries = useCallback(
-    async (series: VodSeries) => {
-      if (!xtreamConfig || series?.series_id == null) return;
-      const sid = Number(series.series_id);
-      if (!Number.isFinite(sid)) return;
-      setLoadingDetail(true);
-      try {
-        const info = await fetchSeriesInfo(xtreamConfig, sid);
-        const episodes = flattenSeriesEpisodes(info);
-        setSeriesDetail({ series, episodes });
-      } catch {
-        setSeriesDetail(null);
-      } finally {
-        setLoadingDetail(false);
-      }
-    },
-    [xtreamConfig]
   );
 
   const playEpisode = useCallback(
@@ -308,7 +296,6 @@ function VodContent() {
                     type="button"
                     className={styles.cardButton}
                     onClick={() => playMovie(movie)}
-                    disabled={!hasValidId}
                   >
                     <div className={styles.poster}>
                       {posterSrc ? (
@@ -403,8 +390,8 @@ function VodContent() {
                   <button
                     type="button"
                     className={styles.cardButton}
-                    onClick={() => openSeriesById(Number(series.series_id))}
-                    disabled={loadingDetail || !hasValidId}
+                    onClick={() => hasValidId && openSeriesById(Number(series.series_id))}
+                    disabled={loadingDetail}
                   >
                 <div className={styles.poster}>
                   {posterSrc ? (
