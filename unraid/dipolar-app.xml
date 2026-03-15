@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Dipolar App</Name>
+  <Repository>dipolar-app:latest</Repository>
+  <Registry>https://github.com/killamfkr/dipolar2.0</Registry>
+  <Network>bridge</Network>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/killamfkr/dipolar2.0/issues</Support>
+  <Project>https://github.com/killamfkr/dipolar2.0</Project>
+  <Overview>Dipolar (Streamio IPTV) web app: React UI + nginx. Proxies /api to the Dipolar Server container. Open this port in your browser for the full app.</Overview>
+  <Category>MediaServer:Other</Category>
+  <WebUI>http://[IP]:[PORT:3000]/</WebUI>
+  <TemplateURL/>
+  <Icon>/plugins/dynamix.docker.manager/images/question.png</Icon>
+  <ExtraParams>--link dipolar-server:server</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <Description>Web UI for Dipolar. Requires the Dipolar Server container running with name &quot;dipolar-server&quot;. Build both images from the repo: docker compose build. Then add Dipolar Server first, then add this container (Unraid applies the link so the app can reach the API at hostname &quot;server&quot;).</Description>
+  <Networking>
+    <Mode>bridge</Mode>
+    <Publish>
+      <Port>
+        <HostPort>3000</HostPort>
+        <ContainerPort>80</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+    </Publish>
+  </Networking>
+  <Environment/>
+  <Labels/>
+  <Config Name="WebUI" Target="3000" Default="3000" Mode="tcp" Description="Host port for the web app" Type="Port" Display="always" Required="true" Mask="false"/>
+</Container>

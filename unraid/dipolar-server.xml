@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Dipolar Server</Name>
+  <Repository>dipolar-server:latest</Repository>
+  <Registry>https://github.com/killamfkr/dipolar2.0</Registry>
+  <Network>bridge</Network>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/killamfkr/dipolar2.0/issues</Support>
+  <Project>https://github.com/killamfkr/dipolar2.0</Project>
+  <Overview>API server for Dipolar (Streamio IPTV). Run this first; the Dipolar App container connects to it. No host port needed—only the app talks to it.</Overview>
+  <Category>MediaServer:Other</Category>
+  <WebUI/>
+  <TemplateURL/>
+  <Icon>/plugins/dynamix.docker.manager/images/question.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <Description>API backend for Dipolar. Build the image from the repo (docker compose build) or use the Docker Compose plugin. Add the Dipolar App container and link it to this container so the app can reach the API at hostname &quot;server&quot;.</Description>
+  <Networking>
+    <Mode>bridge</Mode>
+    <Publish/>
+  </Networking>
+  <Environment>
+    <Variable>
+      <Value>3333</Value>
+      <Name>PORT</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>production</Value>
+      <Name>NODE_ENV</Name>
+      <Mode/>
+    </Variable>
+  </Environment>
+  <Labels/>
+  <Config Name="PORT" Target="PORT" Default="3333" Mode="" Description="API port inside container" Type="Variable" Display="advanced" Required="false" Mask="false"/>
+</Container>
