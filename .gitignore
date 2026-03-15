@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Dipolar server persisted catalog (may contain provider URLs/credentials)
+server/data

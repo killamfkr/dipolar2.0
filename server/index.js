@@ -2,19 +2,24 @@
  * Dipolar Server – Emby-style backend for the React/Android app.
  * Run on a PC/NAS: admin loads M3U/Xtream here; Android apps connect and get catalog + stream URLs.
  * No raw M3U/Xtream URLs are sent to clients; they only get channel/vod metadata and a stream URL by id.
+ * Catalog is persisted to disk so it survives server restart/refresh.
  */
 
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 
 const PORT = process.env.PORT || 3333;
+const CATALOG_FILE = process.env.CATALOG_FILE || path.join(__dirname, 'data', 'catalog.json');
 
-// In-memory catalog (admin loads M3U/Xtream into this)
-let catalog = {
+const emptyCatalog = () => ({
   channels: [],
   epg: { channels: [] },
   vodMovies: [],
@@ -23,7 +28,40 @@ let catalog = {
   xtreamConfig: null,
   m3uUrl: '',
   epgUrl: '',
-};
+});
+
+function loadCatalogFromDisk() {
+  try {
+    const raw = fs.readFileSync(CATALOG_FILE, 'utf8');
+    const data = JSON.parse(raw);
+    return {
+      channels: Array.isArray(data.channels) ? data.channels : [],
+      epg: data.epg && data.epg.channels ? data.epg : { channels: [] },
+      vodMovies: Array.isArray(data.vodMovies) ? data.vodMovies : [],
+      vodSeries: Array.isArray(data.vodSeries) ? data.vodSeries : [],
+      vodFromM3u: Array.isArray(data.vodFromM3u) ? data.vodFromM3u : [],
+      xtreamConfig: data.xtreamConfig && data.xtreamConfig.baseUrl ? data.xtreamConfig : null,
+      m3uUrl: typeof data.m3uUrl === 'string' ? data.m3uUrl : '',
+      epgUrl: typeof data.epgUrl === 'string' ? data.epgUrl : '',
+    };
+  } catch (e) {
+    if (e.code !== 'ENOENT') console.warn('Catalog load failed:', e.message);
+    return emptyCatalog();
+  }
+}
+
+function saveCatalogToDisk() {
+  try {
+    const dir = path.dirname(CATALOG_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(CATALOG_FILE, JSON.stringify(catalog), 'utf8');
+  } catch (e) {
+    console.warn('Catalog save failed:', e.message);
+  }
+}
+
+// In-memory catalog (loaded from disk on start; saved after each admin load)
+let catalog = loadCatalogFromDisk();
 
 // Simple M3U parser (extract #EXTINF lines and next line as URL)
 function parseM3u(text) {
@@ -105,6 +143,7 @@ app.post('/api/admin/load-m3u', async (req, res) => {
       const { channels, vodItems } = parseM3u(m3uContent);
       catalog.channels = channels;
       catalog.vodFromM3u = vodItems;
+      saveCatalogToDisk();
       return res.json({ success: true, channels: channels.length, vod: vodItems.length });
     }
     if (m3uUrl) {
@@ -114,6 +153,7 @@ app.post('/api/admin/load-m3u', async (req, res) => {
       catalog.channels = channels;
       catalog.vodFromM3u = vodItems;
       catalog.m3uUrl = m3uUrl;
+      saveCatalogToDisk();
       return res.json({ success: true, channels: channels.length, vod: vodItems.length });
     }
     return res.status(400).json({ success: false, error: 'm3uUrl or m3uContent required' });
@@ -132,6 +172,7 @@ app.post('/api/admin/load-epg', async (req, res) => {
     const { channels } = parseXmltvSimple(text);
     catalog.epg = { channels };
     catalog.epgUrl = epgUrl;
+    saveCatalogToDisk();
     return res.json({ success: true, channels: channels.length });
   } catch (e) {
     return res.status(500).json({ success: false, error: e.message });
@@ -162,6 +203,7 @@ app.post('/api/admin/load-xtream', async (req, res) => {
     const { channels: epgChannels } = parseXmltvSimple(xmlText);
     catalog.channels = channels;
     catalog.epg = { channels: epgChannels };
+    saveCatalogToDisk();
     return res.json({ success: true, channels: channels.length, epg: epgChannels.length });
   } catch (e) {
     return res.status(500).json({ success: false, error: e.message });
@@ -193,6 +235,7 @@ app.post('/api/admin/load-vod', async (req, res) => {
     catalog.vodMovies = movies;
     catalog.vodSeries = series;
     catalog.xtreamConfig = config;
+    saveCatalogToDisk();
     return res.json({ success: true, movies: movies.length, series: series.length });
   } catch (e) {
     return res.status(500).json({ success: false, error: e.message });
@@ -339,6 +382,7 @@ app.get('/api/health', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Dipolar Server running at http://localhost:${PORT}`);
+  console.log('Catalog file:', CATALOG_FILE);
   console.log('Admin: POST /api/admin/load-m3u, load-epg, load-xtream, load-vod');
   console.log('Clients: GET /api/catalog, /api/stream/live/:id, /api/stream/vod/movie/:id, etc.');
 });
