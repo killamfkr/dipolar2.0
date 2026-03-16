@@ -407,6 +407,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshServerCatalog();
   }, [serverBaseUrl]);
 
+  // If catalog is still empty after a tick (e.g. restore missed), re-apply from localStorage once
+  const restoreAttemptedRef = useRef(false);
+  useEffect(() => {
+    const empty =
+      (channels?.length ?? 0) === 0 &&
+      (vodMovies?.length ?? 0) === 0 &&
+      (vodSeries?.length ?? 0) === 0 &&
+      (vodFromM3u?.length ?? 0) === 0;
+    if (!empty || restoreAttemptedRef.current) return;
+    restoreAttemptedRef.current = true;
+    const data = loadPersistedData();
+    const hasStored =
+      (data.channels?.length ?? 0) > 0 ||
+      (data.vodMovies?.length ?? 0) > 0 ||
+      (data.vodSeries?.length ?? 0) > 0 ||
+      (data.vodFromM3u?.length ?? 0) > 0;
+    if (!hasStored) return;
+    setChannels(data.channels);
+    setEpg(data.epg);
+    setVodMovies(data.vodMovies);
+    setVodSeries(data.vodSeries);
+    setVodFromM3u(data.vodFromM3u);
+    setM3uUrl(data.m3uUrl);
+    setEpgUrl(data.epgUrl);
+    if (data.xtreamConfig) setXtreamConfigState(data.xtreamConfig);
+  }, [channels?.length, vodMovies?.length, vodSeries?.length, vodFromM3u?.length]);
+
   const setServerBaseUrl = useCallback((url: string) => {
     const v = (url ?? '').trim().replace(/\/+$/, '');
     persistServerBaseUrl(v);

@@ -32,7 +32,13 @@
       <Name>NODE_ENV</Name>
       <Mode/>
     </Variable>
+    <Variable>
+      <Value>/data/catalog.json</Value>
+      <Name>CATALOG_FILE</Name>
+      <Mode/>
+    </Variable>
   </Environment>
   <Labels/>
   <Config Name="PORT" Target="PORT" Default="3333" Mode="" Description="API port inside container" Type="Variable" Display="advanced" Required="false" Mask="false"/>
+  <Config Name="Catalog Data" Target="/data" Default="/mnt/user/appdata/dipolar-server/data" Mode="rw" Description="Persistent catalog (channels/VOD). Mount so catalog survives container restart." Type="Path" Display="always" Required="false" Mask="false"/>
 </Container>

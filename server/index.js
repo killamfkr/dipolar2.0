@@ -62,6 +62,8 @@ function saveCatalogToDisk() {
 
 // In-memory catalog (loaded from disk on start; saved after each admin load)
 let catalog = loadCatalogFromDisk();
+const total = (catalog.channels?.length ?? 0) + (catalog.vodMovies?.length ?? 0) + (catalog.vodSeries?.length ?? 0);
+if (total > 0) console.log('Catalog loaded from disk:', catalog.channels?.length ?? 0, 'channels,', catalog.vodMovies?.length ?? 0, 'movies,', catalog.vodSeries?.length ?? 0, 'series');
 
 // Simple M3U parser (extract #EXTINF lines and next line as URL)
 function parseM3u(text) {

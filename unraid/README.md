@@ -25,13 +25,15 @@ When the repo’s `unraid/` folder changes (e.g. new image URLs or settings), co
 
 Images pull from **ghcr.io** (no local build). No custom network or Network dropdown needed.
 
-1. **Docker** → **Add Container** → **Template** → **Dipolar Server**. Leave **Network type** as **Host**. Create.
+1. **Docker** → **Add Container** → **Template** → **Dipolar Server**. Leave **Network type** as **Host**. **Add the "Catalog Data" path** (e.g. host `/mnt/user/appdata/dipolar-server/data` → container `/data`) so channels and VOD survive container restarts and refresh. Create.
 2. **Add Container** again → **Template** → **Dipolar App**. Leave **Extra Parameters** as `--add-host=host.docker.internal:host-gateway`. Set **Host port** to **3000** (or another free port). The **container port** must be **80** (nginx listens on 80 inside the image)—the template sets this. Create.
-3. Open **http://UNRAID_IP:3000** in your browser (use your server’s IP and the port you chose).
+3. Open **http://UNRAID_IP:3000** in your browser (e.g. `http://192.168.100:3000`). Use the same URL every time so the browser’s saved catalog (localStorage) persists.
 
 ## Notes
 
 - **Dipolar Server** uses **Host** network, so the API listens on the Unraid host on port **3333** (no port mapping).
+- **Catalog persistence:** Add the **Catalog Data** path when creating Dipolar Server (template default: host `/mnt/user/appdata/dipolar-server/data` → container `/data`). The server writes `catalog.json` there so channels and VOD survive container restarts and browser refresh. **If you already have the server:** Edit the container → add Path (host e.g. `/mnt/user/appdata/dipolar-server/data`, container `/data`) and variable `CATALOG_FILE` = `/data/catalog.json` → Recreate. Then load VOD/channels once in the app Admin; after that they persist across restarts.
+- **Browser:** Use the same URL every time (e.g. `http://192.168.100:3000`). The app saves the catalog in the browser’s localStorage for that origin so refresh doesn’t clear the list.
 - **Dipolar App** uses **Bridge** and talks to the API at `host.docker.internal:3333` (Extra Parameters add that hostname).
 - You don’t need to change any Network setting in the Docker UI; the templates handle it.
 - To update: **Docker** → select container → **Recreate** (or pull the image first).
