@@ -90,6 +90,10 @@ export interface Favorites {
 }
 
 const PERSISTED_DATA_KEY = 'streamio-persisted-data';
+const MAX_PERSIST_CHANNELS = 500;
+const MAX_PERSIST_MOVIES = 800;
+const MAX_PERSIST_SERIES = 300;
+const MAX_PERSIST_M3U_VOD = 200;
 
 interface PersistedData {
   channels: IptvChannel[];
@@ -169,8 +173,15 @@ function parseAndValidatePersisted(parsed: unknown): PersistedData {
 }
 
 function loadPersistedData(): PersistedData {
+  const read = (): string | null => {
+    try {
+      return localStorage.getItem(PERSISTED_DATA_KEY) || sessionStorage.getItem(PERSISTED_DATA_KEY);
+    } catch {
+      return null;
+    }
+  };
   try {
-    const raw = localStorage.getItem(PERSISTED_DATA_KEY);
+    const raw = read();
     if (!raw) return getEmptyPersisted();
     return parseAndValidatePersisted(JSON.parse(raw));
   } catch {
@@ -192,17 +203,42 @@ function getEmptyPersisted(): PersistedData {
 }
 
 function savePersistedData(data: PersistedData) {
-  const json = JSON.stringify(data);
+  const truncated: PersistedData = {
+    channels: (data.channels || []).slice(0, MAX_PERSIST_CHANNELS),
+    epg: data.epg ?? { channels: [] },
+    vodMovies: (data.vodMovies || []).slice(0, MAX_PERSIST_MOVIES),
+    vodSeries: (data.vodSeries || []).slice(0, MAX_PERSIST_SERIES),
+    vodFromM3u: (data.vodFromM3u || []).slice(0, MAX_PERSIST_M3U_VOD),
+    m3uUrl: data.m3uUrl ?? '',
+    epgUrl: data.epgUrl ?? '',
+    xtreamConfig: data.xtreamConfig ?? null,
+  };
   try {
+    const json = JSON.stringify(truncated);
     localStorage.setItem(PERSISTED_DATA_KEY, json);
+    if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(PERSISTED_DATA_KEY, json);
   } catch {
-    /* ignore */
+    /* quota or disabled; try minimal save */
+    try {
+      const minimal = JSON.stringify({
+        channels: truncated.channels.slice(0, 50),
+        epg: truncated.epg,
+        vodMovies: truncated.vodMovies.slice(0, 100),
+        vodSeries: truncated.vodSeries.slice(0, 50),
+        vodFromM3u: truncated.vodFromM3u.slice(0, 50),
+        m3uUrl: truncated.m3uUrl,
+        epgUrl: truncated.epgUrl,
+        xtreamConfig: truncated.xtreamConfig,
+      });
+      localStorage.setItem(PERSISTED_DATA_KEY, minimal);
+    } catch {
+      /* ignore */
+    }
   }
-  // On native, also persist to Capacitor Preferences (survives app close)
   import('@capacitor/core').then(({ Capacitor }) => {
     if (!Capacitor.isNativePlatform()) return;
     import('@capacitor/preferences').then(({ Preferences }) => {
-      Preferences.set({ key: PERSISTED_DATA_KEY, value: json }).catch(() => {});
+      Preferences.set({ key: PERSISTED_DATA_KEY, value: JSON.stringify(truncated) }).catch(() => {});
     });
   });
 }
@@ -353,6 +389,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [externalPlayerMode, setExternalPlayerModeState] = useState(loadExternalPlayerMode);
   const [serverBaseUrl, setServerBaseUrlState] = useState(getServerBaseUrl);
   const catalogHydratedRef = useRef(true); // true so save runs after initial restore from cache
+  const persistedUrlsRef = useRef({ m3uUrl: '', epgUrl: '', xtreamConfig: null as XtreamConfig | null });
+  useEffect(() => {
+    persistedUrlsRef.current = { m3uUrl, epgUrl, xtreamConfig };
+  }, [m3uUrl, epgUrl, xtreamConfig]);
 
   useEffect(() => {
     setContinueWatching(loadContinueWatching(userId));
@@ -395,6 +435,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setVodSeries(newVodSeries);
         setVodFromM3u(newVodFromM3u);
         catalogHydratedRef.current = true;
+        const urls = persistedUrlsRef.current;
+        savePersistedData({
+          channels: newChannels,
+          epg: {
+            channels: (data.epg?.channels || []).map((ch: { id: string; displayName?: string }) => ({
+              id: ch.id,
+              displayName: ch.displayName ?? ch.id,
+              programs: [],
+            })),
+          },
+          vodMovies: newVodMovies,
+          vodSeries: newVodSeries,
+          vodFromM3u: newVodFromM3u,
+          m3uUrl: urls.m3uUrl,
+          epgUrl: urls.epgUrl,
+          xtreamConfig: urls.xtreamConfig,
+        });
       }
       // when server returns empty, leave catalog and ref to hydration so cached data is kept
     } catch {
