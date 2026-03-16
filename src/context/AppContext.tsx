@@ -1091,6 +1091,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  // After a refresh, if we have Xtream config saved but no catalog yet, auto-reload from Xtream once
+  const autoXtreamAttemptedRef = useRef(false);
+  useEffect(() => {
+    if (autoXtreamAttemptedRef.current) return;
+    if (!xtreamConfig) return;
+    const noCatalog =
+      (channels?.length ?? 0) === 0 &&
+      (vodMovies?.length ?? 0) === 0 &&
+      (vodSeries?.length ?? 0) === 0 &&
+      (vodFromM3u?.length ?? 0) === 0;
+    if (!noCatalog) return;
+    autoXtreamAttemptedRef.current = true;
+    // Fire-and-forget; errors will surface in the usual result banners if user opens Settings
+    loadFromXtream(xtreamConfig).catch(() => {});
+    loadVodFromXtream(xtreamConfig).catch(() => {});
+  }, [
+    xtreamConfig,
+    channels?.length,
+    vodMovies?.length,
+    vodSeries?.length,
+    vodFromM3u?.length,
+    loadFromXtream,
+    loadVodFromXtream,
+  ]);
+
   const value = useMemo<AppContextValue>(
     () => ({
       channels,
