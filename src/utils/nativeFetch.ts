@@ -5,8 +5,11 @@
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 
 const DEFAULT_TIMEOUT_MS = 45_000;
-/** Allow enough time for large playlists; keep reasonable so loading doesn't hang */
-export const M3U_TIMEOUT_MS = 90_000;
+/**
+ * Allow enough time for very large/slow Xtream playlists.
+ * Some providers take a couple of minutes to return the full M3U.
+ */
+export const M3U_TIMEOUT_MS = 300_000;
 
 function getErrorMessage(e: unknown): string {
   if (e instanceof Error) return e.message;
