@@ -11,7 +11,7 @@ function stripTrailingSlash(s: string): string {
   return s.endsWith('/') ? s.slice(0, -1) : s;
 }
 
-export function buildGetUrl(config: XtreamConfig, output: 'ts' | 'hls' = 'hls'): string {
+export function buildGetUrl(config: XtreamConfig, output: 'ts' | 'hls' = 'ts'): string {
   const base = stripTrailingSlash(config.baseUrl);
   return `${base}/get.php?username=${encodeURIComponent(config.username)}&password=${encodeURIComponent(config.password)}&type=m3u_plus&output=${output}`;
 }
