@@ -4,11 +4,14 @@
  */
 
 const SERVER_URL_KEY = 'streamio-server-url';
+const SERVER_URL_DISABLED = '__DISABLED__';
 
 export function getServerBaseUrl(): string {
   try {
-    const u = localStorage.getItem(SERVER_URL_KEY);
-    const stored = (u ?? '').trim().replace(/\/+$/, '');
+    const raw = localStorage.getItem(SERVER_URL_KEY);
+    // User explicitly disabled server mode
+    if (raw === SERVER_URL_DISABLED) return '';
+    const stored = (raw ?? '').trim().replace(/\/+$/, '');
     if (stored) return stored;
     // When served from Docker/same host (e.g. http://UNRAID_IP/), use same origin so /api works
     if (typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('localhost:5173'))
@@ -22,8 +25,12 @@ export function getServerBaseUrl(): string {
 export function setServerBaseUrl(url: string): void {
   const v = (url ?? '').trim().replace(/\/+$/, '');
   try {
-    if (v) localStorage.setItem(SERVER_URL_KEY, v);
-    else localStorage.removeItem(SERVER_URL_KEY);
+    if (v) {
+      localStorage.setItem(SERVER_URL_KEY, v);
+    } else {
+      // Store explicit "disabled" sentinel so we don't fall back to window.location.origin
+      localStorage.setItem(SERVER_URL_KEY, SERVER_URL_DISABLED);
+    }
   } catch {
     /* ignore */
   }
